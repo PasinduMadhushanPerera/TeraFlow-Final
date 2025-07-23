@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TerraFlow - Inventory Test</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        button { margin: 5px; padding: 10px; }
+        #output { background: #f5f5f5; padding: 10px; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>TerraFlow Inventory Management Test</h1>
+    
+    <div class="section">
+        <h2>Step 1: Login</h2>
+        <input type="email" id="email" placeholder="Email" value="admin@terraflow.com" />
+        <input type="password" id="password" placeholder="Password" value="admin123" />
+        <button onclick="doLogin()">Login</button>
+        <div id="loginStatus"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Step 2: Test Inventory Endpoints</h2>
+        <button onclick="testInventoryOverview()">Test Inventory Overview</button>
+        <button onclick="testInventoryAlerts()">Test Inventory Alerts</button>
+        <button onclick="testInventoryMovements()">Test Inventory Movements</button>
+        <button onclick="testProductsEndpoint()">Test Products Endpoint</button>
+    </div>
+    
+    <div class="section">
+        <h2>Output</h2>
+        <button onclick="clearOutput()">Clear Output</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+        
+        async function doLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const statusDiv = document.getElementById('loginStatus');
+            
+            log('🔄 Attempting login...', 'info');
+            
+            try {
+                const response = await axios.post('http://localhost:5000/api/auth/login', {
+                    email: email,
+                    password: password
+                });
+                
+                if (response.data && response.data.token) {
+                    authToken = response.data.token;
+                    statusDiv.innerHTML = '<span class="success">✅ Login successful!</span>';
+                    log('✅ Login successful', 'success');
+                    log(`User: ${response.data.user.full_name} (${response.data.user.role})`, 'success');
+                    
+                    // Store in localStorage like the frontend does
+                    localStorage.setItem('terraflow_token', authToken);
+                    
+                } else {
+                    statusDiv.innerHTML = '<span class="error">❌ Login failed</span>';
+                    log('❌ Login failed: No token received', 'error');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<span class="error">❌ Login error</span>';
+                log(`❌ Login error: ${error.response?.data?.message || error.message}`, 'error');
+            }
+        }
+        
+        async function testInventoryOverview() {
+            if (!authToken) {
+                log('❌ Please login first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing inventory overview endpoint...', 'info');
+            
+            try {
+                const response = await axios.get('http://localhost:5000/api/inventory/overview', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('✅ Inventory overview API success', 'success');
+                log(`Response structure: ${JSON.stringify(response.data, null, 2)}`, 'info');
+                
+                if (response.data.data && response.data.data.inventory) {
+                    log(`📦 Found ${response.data.data.inventory.length} inventory items`, 'success');
+                }
+                if (response.data.data && response.data.data.statistics) {
+                    log(`📊 Statistics available: ${JSON.stringify(response.data.data.statistics)}`, 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Inventory overview error: ${error.response?.data?.message || error.message}`, 'error');
+                if (error.response) {
+                    log(`Status: ${error.response.status}`, 'error');
+                    log(`Data: ${JSON.stringify(error.response.data)}`, 'error');
+                }
+            }
+        }
+        
+        async function testInventoryAlerts() {
+            if (!authToken) {
+                log('❌ Please login first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing inventory alerts endpoint...', 'info');
+            
+            try {
+                const response = await axios.get('http://localhost:5000/api/inventory/alerts', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('✅ Inventory alerts API success', 'success');
+                log(`Response: ${JSON.stringify(response.data, null, 2)}`, 'info');
+                
+            } catch (error) {
+                log(`❌ Inventory alerts error: ${error.response?.data?.message || error.message}`, 'error');
+            }
+        }
+        
+        async function testInventoryMovements() {
+            if (!authToken) {
+                log('❌ Please login first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing inventory movements endpoint...', 'info');
+            
+            try {
+                const response = await axios.get('http://localhost:5000/api/inventory/movements', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('✅ Inventory movements API success', 'success');
+                log(`Response: ${JSON.stringify(response.data, null, 2)}`, 'info');
+                
+            } catch (error) {
+                log(`❌ Inventory movements error: ${error.response?.data?.message || error.message}`, 'error');
+            }
+        }
+        
+        async function testProductsEndpoint() {
+            if (!authToken) {
+                log('❌ Please login first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing products endpoint (fallback for inventory)...', 'info');
+            
+            try {
+                const response = await axios.get('http://localhost:5000/api/admin/products', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('✅ Products API success', 'success');
+                log(`Found ${response.data.data.length} products`, 'success');
+                
+                if (response.data.data.length > 0) {
+                    const sample = response.data.data[0];
+                    log(`Sample product: ${JSON.stringify(sample, null, 2)}`, 'info');
+                }
+                
+            } catch (error) {
+                log(`❌ Products endpoint error: ${error.response?.data?.message || error.message}`, 'error');
+            }
+        }
+        
+        // Auto-load token if available
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('terraflow_token');
+            if (savedToken) {
+                authToken = savedToken;
+                document.getElementById('loginStatus').innerHTML = '<span class="success">✅ Using saved token</span>';
+                log('🔄 Using saved authentication token', 'info');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Custom Navbar Enhancements */
+.navbar-glass {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.navbar-shadow-glow {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-logo-glow {
+  filter: drop-shadow(0 4px 8px rgba(245, 158, 11, 0.3));
+}
+
+/* Button Hover Animations */
+.btn-glow-amber {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+}
+
+.btn-glow-amber:hover {
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Navbar Navigation Item Hover Effect */
+.nav-item-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-item-hover::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.nav-item-hover:hover::before {
+  width: 100%;
+}
+
+/* Pulse Animation for Status Indicator */
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse-green {
+  animation: pulse-green 2s infinite;
+}
+
+/* Dropdown Menu Enhancements */
+.ant-dropdown .ant-dropdown-menu {
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(20px);
+}
+
+.ant-dropdown .ant-dropdown-menu-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 4px 8px;
+}
+
+.ant-dropdown .ant-dropdown-menu-item:hover {
+  background: linear-gradient(45deg, #fef3c7, #fde68a);
+  color: #92400e;
+  transform: translateX(4px);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .navbar-mobile-hidden {
+    display: none;
+  }
+}
+
+/* Mobile Drawer Enhancements */
+.ant-drawer .ant-drawer-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ant-drawer .ant-drawer-body {
+  padding: 0;
+}
+
+.ant-menu-inline .ant-menu-item {
+  border-radius: 12px;
+  margin: 8px 12px;
+  transition: all 0.3s ease;
+}
+
+.ant-menu-inline .ant-menu-item:hover {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  transform: translateX(8px);
+}
+
+.ant-menu-inline .ant-menu-item-selected {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.ant-menu-inline .ant-menu-submenu > .ant-menu-submenu-title {
+  border-radius: 12px;
+  margin: 8px 12px;
+}
+
+.ant-menu-inline .ant-menu-submenu > .ant-menu-submenu-title:hover {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+}
+
+/* Responsive Logo */
+@media (max-width: 640px) {
+  .navbar-logo-text {
+    font-size: 1.25rem;
+  }
+  
+  .navbar-logo-subtitle {
+    display: none;
+  }
+}
+
+/* Enhanced Mobile Menu Animation */
+.mobile-menu-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu-item:hover {
+  transform: translateX(8px) scale(1.02);
+}
+
+/* Dark Mode Styles */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark .bg-white {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-white\/90 {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.dark .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .border-gray-200 {
+  border-color: #475569 !important;
+}
+
+.dark .border-gray-100 {
+  border-color: #334155 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #1e293b !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Dark mode navbar enhancements */
+.dark .navbar-glass {
+  background: rgba(30, 41, 59, 0.8) !important;
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+/* Dark mode hover effects */
+.dark .hover\:bg-amber-50:hover {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.dark .hover\:from-amber-50:hover {
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.1), rgba(251, 146, 60, 0.1)) !important;
+}
+
+/* Dark mode drawer styles */
+.dark .ant-drawer-content {
+  background-color: #1e293b !important;
+}
+
+.dark .ant-drawer-header {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.95) 100%) !important;
+  border-bottom-color: #475569 !important;
+}
+
+.dark .ant-menu {
+  background-color: transparent !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-menu-item {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-menu-item:hover {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: #f59e0b !important;
+}
+
+.dark .ant-menu-submenu-title {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-menu-submenu-title:hover {
+  color: #f59e0b !important;
+}
+
+/* Dark mode buttons */
+.dark .ant-btn-text {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-btn-text:hover {
+  color: #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+/* Dark mode transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

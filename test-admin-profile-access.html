@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Profile Direct Access</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        iframe { width: 100%; height: 600px; border: 1px solid #ddd; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 TerraFlow Admin Profile Testing</h1>
+        
+        <div class="info">
+            This page will help you test and access the admin profile page with proper authentication.
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="setupAndTestAdminProfile()">🔧 Full Setup & Test</button>
+            <button onclick="testFrontendLogin()">🔐 Test Frontend Login</button>
+            <button onclick="directAdminAccess()">👤 Direct Admin Profile Access</button>
+            <button onclick="checkBrowserConsole()">🐛 Check Console for Errors</button>
+        </div>
+        
+        <div id="results"></div>
+        
+        <h3>Test Results:</h3>
+        <div id="test-status">Ready to test...</div>
+        
+        <h3>Admin Profile Preview:</h3>
+        <div id="profile-frame-container"></div>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        async function setupAndTestAdminProfile() {
+            addResult('🔄 Starting comprehensive admin profile test...', 'info');
+            
+            try {
+                // Step 1: Clear existing session
+                localStorage.removeItem('terraflow_user');
+                localStorage.removeItem('terraflow_token');
+                addResult('1️⃣ Cleared existing session', 'info');
+                
+                // Step 2: Login and get token
+                const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@terraflow.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                
+                if (!loginData.success) {
+                    addResult('❌ Login failed: ' + loginData.message, 'error');
+                    return;
+                }
+                
+                addResult('2️⃣ Login successful!', 'success');
+                
+                // Step 3: Store session data
+                const user = {
+                    id: loginData.user.id.toString(),
+                    username: loginData.user.full_name,
+                    email: loginData.user.email,
+                    role: loginData.user.role,
+                    fullName: loginData.user.full_name,
+                    isApproved: true,
+                    token: loginData.token
+                };
+                
+                localStorage.setItem('terraflow_user', JSON.stringify(user));
+                localStorage.setItem('terraflow_token', loginData.token);
+                addResult('3️⃣ Session data stored', 'success');
+                
+                // Step 4: Test profile API directly
+                const profileResponse = await fetch('http://localhost:5000/api/auth/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const profileData = await profileResponse.json();
+                
+                if (profileData.success) {
+                    addResult('4️⃣ Profile API working! Data received: ' + Object.keys(profileData.data).join(', '), 'success');
+                } else {
+                    addResult('❌ Profile API failed: ' + profileData.message, 'error');
+                    return;
+                }
+                
+                // Step 5: Test frontend access
+                addResult('5️⃣ Opening admin profile in new window...', 'info');
+                const adminWindow = window.open('http://localhost:5173/admin/profile', '_blank');
+                
+                if (adminWindow) {
+                    addResult('✅ Admin profile window opened successfully!', 'success');
+                    addResult('📋 If the page is blank, check the browser console in the new window for React errors.', 'info');
+                } else {
+                    addResult('❌ Failed to open admin profile window (popup blocked?)', 'error');
+                }
+                
+                // Step 6: Create embedded frame
+                addResult('6️⃣ Creating embedded preview...', 'info');
+                const frameContainer = document.getElementById('profile-frame-container');
+                frameContainer.innerHTML = `
+                    <iframe src="http://localhost:5173/admin/profile" title="Admin Profile Preview">
+                        <p>Your browser doesn't support iframes.</p>
+                    </iframe>
+                `;
+                
+                addResult('🎉 Test completed! Check the iframe below or the new window.', 'success');
+                
+            } catch (error) {
+                addResult('❌ Test failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testFrontendLogin() {
+            addResult('🔐 Testing frontend login flow...', 'info');
+            
+            // Open login page
+            const loginWindow = window.open('http://localhost:5173/login', '_blank');
+            
+            if (loginWindow) {
+                addResult('✅ Login page opened. Please login manually with admin@terraflow.com / admin123', 'success');
+                addResult('📋 After login, you should be redirected to the dashboard. Then navigate to admin profile.', 'info');
+            } else {
+                addResult('❌ Failed to open login page', 'error');
+            }
+        }
+
+        function directAdminAccess() {
+            addResult('👤 Opening admin profile directly...', 'info');
+            
+            const adminWindow = window.open('http://localhost:5173/admin/profile', '_blank');
+            
+            if (adminWindow) {
+                addResult('✅ Window opened. If you see login page, authentication is working correctly.', 'success');
+                addResult('📋 If you see blank page, there might be a React component error.', 'info');
+            } else {
+                addResult('❌ Failed to open window', 'error');
+            }
+        }
+
+        function checkBrowserConsole() {
+            addResult('🐛 Opening frontend with developer tools guidance...', 'info');
+            
+            const frontendWindow = window.open('http://localhost:5173/admin/profile', '_blank');
+            
+            if (frontendWindow) {
+                addResult('✅ Window opened. Press F12 to open Developer Tools and check Console tab for errors.', 'success');
+                addResult('🔍 Look for React errors, network errors, or authentication issues.', 'info');
+                addResult('📋 Common issues: Missing dependencies, component import errors, API connection problems.', 'info');
+            } else {
+                addResult('❌ Failed to open window', 'error');
+            }
+        }
+
+        // Auto-check session on load
+        window.onload = function() {
+            const user = localStorage.getItem('terraflow_user');
+            const token = localStorage.getItem('terraflow_token');
+            
+            let status = '<div class="info">Session Check:</div>';
+            
+            if (user && token) {
+                const userData = JSON.parse(user);
+                status += '<div class="success">✅ Found stored session for: ' + userData.fullName + ' (' + userData.role + ')</div>';
+            } else {
+                status += '<div class="error">❌ No stored session found</div>';
+            }
+            
+            document.getElementById('test-status').innerHTML = status;
+        };
+    </script>
+</body>
+</html>

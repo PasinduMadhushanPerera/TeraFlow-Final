@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Frontend Issue</title>
+</head>
+<body>
+    <h1>TerraFlow Debug Console</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testInventory()">Test Inventory</button>
+    <button onclick="checkLocalStorage()">Check LocalStorage</button>
+    <div id="output"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += '<div>' + message + '</div>';
+            console.log(message);
+        }
+        
+        async function testLogin() {
+            try {
+                log('🔍 Testing admin login...');
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@terraflow.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.token) {
+                    localStorage.setItem('terraflow_token', data.token);
+                    log('✅ Login successful, token saved');
+                    log('User: ' + JSON.stringify(data.user));
+                } else {
+                    log('❌ Login failed: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                log('❌ Login error: ' + error.message);
+            }
+        }
+        
+        async function testInventory() {
+            try {
+                log('🔍 Testing inventory endpoint...');
+                const token = localStorage.getItem('terraflow_token');
+                if (!token) {
+                    log('❌ No token found, please login first');
+                    return;
+                }
+                
+                log('Using token: ' + token.substring(0, 20) + '...');
+                
+                const response = await fetch(`${API_BASE}/inventory/overview`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                log('✅ Inventory response: ' + JSON.stringify(data, null, 2).substring(0, 500) + '...');
+                
+                if (data.data && data.data.inventory) {
+                    log(`✅ Found ${data.data.inventory.length} inventory items`);
+                }
+                if (data.data && data.data.statistics) {
+                    log('✅ Statistics: ' + JSON.stringify(data.data.statistics));
+                }
+            } catch (error) {
+                log('❌ Inventory error: ' + error.message);
+            }
+        }
+        
+        function checkLocalStorage() {
+            log('🔍 Checking localStorage...');
+            const token = localStorage.getItem('terraflow_token');
+            if (token) {
+                log('✅ Token found: ' + token.substring(0, 50) + '...');
+            } else {
+                log('❌ No token found in localStorage');
+            }
+            
+            // Check all localStorage items
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                log(`${key}: ${value.substring(0, 50)}...`);
+            }
+        }
+    </script>
+</body>
+</html>
