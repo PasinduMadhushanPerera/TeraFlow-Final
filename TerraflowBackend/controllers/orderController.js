@@ -1,5 +1,6 @@
 const { pool } = require('../config/database');
 const { validationResult } = require('express-validator');
+const { triggerOrderStatusUpdate, triggerLowStockAlert } = require('./notificationController');
 
 /**
  * Order Controller
@@ -94,6 +95,33 @@ const createOrderFromCart = async (req, res) => {
       );
 
       await connection.commit();
+
+      // Send notification to customer about order creation
+      await triggerOrderStatusUpdate(customerId, orderId, 'confirmed', `Your order #${orderNumber} has been confirmed and is being processed.`);
+
+      // Check for low stock and notify admin
+      for (const item of cartItems) {
+        const [stockCheck] = await pool.execute(
+          'SELECT stock_quantity, minimum_stock, name FROM products WHERE id = ?',
+          [item.product_id]
+        );
+        
+        if (stockCheck[0] && stockCheck[0].stock_quantity <= stockCheck[0].minimum_stock) {
+          // Get admin user ID (assuming first admin user)
+          const [adminUser] = await pool.execute(
+            'SELECT id FROM users WHERE role = "admin" ORDER BY id LIMIT 1'
+          );
+          
+          if (adminUser[0]) {
+            await triggerLowStockAlert(
+              adminUser[0].id, 
+              item.product_id, 
+              stockCheck[0].name, 
+              stockCheck[0].stock_quantity
+            );
+          }
+        }
+      }
 
       res.status(201).json({
         success: true,
@@ -260,7 +288,7 @@ const updateOrderStatus = async (req, res) => {
       WHERE id = ?
     `, [status, notes, orderId]);
 
-    // Create notification for customer
+    // Send notification to customer using our notification trigger
     const statusMessages = {
       confirmed: 'Your order has been confirmed and is being processed',
       processing: 'Your order is currently being processed',
@@ -270,16 +298,12 @@ const updateOrderStatus = async (req, res) => {
     };
 
     if (statusMessages[status]) {
-      await pool.execute(`
-        INSERT INTO notifications (
-          user_id, type, title, message, related_id, related_type
-        ) VALUES (?, 'order_update', ?, ?, ?, 'order')
-      `, [
-        existingOrder[0].customer_id,
-        'Order Status Update',
-        statusMessages[status],
-        orderId
-      ]);
+      await triggerOrderStatusUpdate(
+        existingOrder[0].customer_id, 
+        orderId, 
+        status, 
+        statusMessages[status]
+      );
     }
 
     res.json({

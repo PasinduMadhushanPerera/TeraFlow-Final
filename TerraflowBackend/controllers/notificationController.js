@@ -5,7 +5,28 @@ const { pool } = require('../config/database');
  * Handles system notifications for all user roles
  */
 
-// Create a new notification
+// Utility function to create notifications internally (not an API route)
+const createNotificationUtil = async ({ user_id, type, title, message, related_type = null, related_id = null }) => {
+  try {
+    if (!user_id || !type || !title || !message) {
+      throw new Error('Missing required fields: user_id, type, title, message');
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO notifications 
+       (user_id, type, title, message, related_type, related_id, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+      [user_id, type, title, message, related_type, related_id]
+    );
+
+    return { success: true, id: result.insertId };
+  } catch (error) {
+    console.error('Create notification utility error:', error);
+    throw error;
+  }
+};
+
+// Create a new notification (API route)
 const createNotification = async (req, res) => {
   try {
     const { 
@@ -74,10 +95,17 @@ const getUserNotifications = async (req, res) => {
       params
     );
 
+    // Get unread count
+    const [unreadResult] = await pool.execute(
+      `SELECT COUNT(*) as unread_count FROM notifications WHERE user_id = ? AND is_read = FALSE`,
+      [userId]
+    );
+
     res.json({
       success: true,
       data: {
         notifications,
+        unreadCount: unreadResult[0].unread_count,
         pagination: {
           current_page: parseInt(page),
           per_page: parseInt(limit),
@@ -264,10 +292,10 @@ const triggerPaymentConfirmation = async (orderId, customerId, amount) => {
   }
 };
 
-const triggerSupplierDeliveryRequest = async (materialRequestId, supplierId) => {
+const triggerSupplierDeliveryRequest = async (supplierId, materialRequestId, materialType, quantity, unit) => {
   try {
     const title = '📋 New Material Request';
-    const message = `You have received a new material delivery request. Please review and update delivery status.`;
+    const message = `You have received a new material request for ${quantity} ${unit} of ${materialType}. Please review and respond.`;
     
     await pool.execute(
       `INSERT INTO notifications 
@@ -275,13 +303,15 @@ const triggerSupplierDeliveryRequest = async (materialRequestId, supplierId) => 
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [
         supplierId, 
-        'supplier_update', 
+        'delivery_request', 
         title, 
         message, 
         'material_request',
         materialRequestId
       ]
     );
+    
+    console.log(`✅ Notification sent to supplier ${supplierId} for material request ${materialRequestId}`);
   } catch (error) {
     console.error('Supplier delivery request notification error:', error);
   }
@@ -289,6 +319,7 @@ const triggerSupplierDeliveryRequest = async (materialRequestId, supplierId) => 
 
 module.exports = {
   createNotification,
+  createNotificationUtil,
   getUserNotifications,
   markAsRead,
   markAllAsRead,

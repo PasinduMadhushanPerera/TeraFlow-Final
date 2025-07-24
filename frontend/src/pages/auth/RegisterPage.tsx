@@ -235,8 +235,10 @@ export const RegisterPage: React.FC = () => {
               <Card
                 title={<span className="text-lg font-semibold text-gray-700">Personal Information</span>}
                 className="h-full rounded-xl border border-gray-200"
-                headStyle={{ borderBottom: '1px solid #f0f0f0', padding: '16px 24px' }}
-                bodyStyle={{ padding: '24px' }}
+                styles={{
+                  header: { borderBottom: '1px solid #f0f0f0', padding: '16px 24px' },
+                  body: { padding: '24px' }
+                }}
               >
                 {userRole === 'customer' ? renderCustomerFields() : renderSupplierFields()}
               </Card>
@@ -246,8 +248,10 @@ export const RegisterPage: React.FC = () => {
               <Card
                 title={<span className="text-lg font-semibold text-gray-700">Account Security</span>}
                 className="h-full rounded-xl border border-gray-200"
-                headStyle={{ borderBottom: '1px solid #f0f0f0', padding: '16px 24px' }}
-                bodyStyle={{ padding: '24px' }}
+                styles={{
+                  header: { borderBottom: '1px solid #f0f0f0', padding: '16px 24px' },
+                  body: { padding: '24px' }
+                }}
               >
                 <Form.Item
                   name="email"
@@ -322,7 +326,7 @@ export const RegisterPage: React.FC = () => {
       {/* Terms Modal */}
       <Modal
         title="Terms and Conditions"
-        visible={termsModalVisible}
+        open={termsModalVisible}
         onOk={handleTermsAccept}
         onCancel={() => setTermsModalVisible(false)}
         okText="I Accept"

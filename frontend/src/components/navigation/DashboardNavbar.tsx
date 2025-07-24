@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, Layout, Dropdown, Avatar } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, BellOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
-import NotificationCenter from '../NotificationCenter';
+import { NotificationBell } from '../notifications/NotificationBell';
 
 const { Header } = Layout;
 
@@ -110,6 +110,11 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userRole }) =>
       label: <Link to={`/${userRole}/profile`}>Profile</Link>
     },
     {
+      key: 'notifications',
+      icon: <BellOutlined />,
+      label: <Link to={`/${userRole}/notifications`}>Notifications</Link>
+    },
+    {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: 'Logout',
@@ -153,7 +158,7 @@ export const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ userRole }) =>
             />
           )}
         </Dropdown>
-        <NotificationCenter />
+        <NotificationBell />
       </div>
     </Header>
   );

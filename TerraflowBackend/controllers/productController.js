@@ -1,5 +1,6 @@
 const { pool } = require('../config/database');
 const { validationResult } = require('express-validator');
+const { triggerLowStockAlert } = require('./notificationController');
 
 /**
  * Product Controller
@@ -388,6 +389,12 @@ const updateProduct = async (req, res) => {
           Math.abs(stockDifference),
           req.user.id
         ]);
+      }
+
+      // Check for low stock and trigger alert
+      const minimumStock = updateData.minimum_stock || existingProduct[0].minimum_stock;
+      if (updateData.stock_quantity <= minimumStock) {
+        await triggerLowStockAlert(productId, updateData.stock_quantity, minimumStock);
       }
     }
 

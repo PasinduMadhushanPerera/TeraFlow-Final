@@ -1,6 +1,8 @@
-const { pool } = require('../config/database');
+const db = require('../config/database');
+const pool = db.pool;
 const { validationResult } = require('express-validator');
 const { getFileUrl, deleteUploadedFiles } = require('../middleware/upload');
+const { triggerSupplierDeliveryRequest, triggerOrderStatusUpdate } = require('./notificationController');
 const fs = require('fs');
 const path = require('path');
 
@@ -298,9 +300,9 @@ const updateProduct = async (req, res) => {
       existing_gallery_images
     } = req.body;
 
-    // Get current product for movement tracking and image cleanup
+    // Get current product for image cleanup
     const [currentProduct] = await pool.execute(
-      'SELECT stock_quantity, image_url, gallery_images FROM products WHERE id = ?',
+      'SELECT image_url, gallery_images FROM products WHERE id = ?',
       [productId]
     );
 
@@ -315,7 +317,7 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    let imageUrl = existing_main_image || null;
+    let imageUrl = existing_main_image || currentProduct[0].image_url;
     let galleryImages = [];
     
     // Parse existing gallery images
@@ -323,8 +325,10 @@ const updateProduct = async (req, res) => {
       try {
         galleryImages = JSON.parse(existing_gallery_images);
       } catch (error) {
-        galleryImages = [];
+        galleryImages = currentProduct[0].gallery_images ? JSON.parse(currentProduct[0].gallery_images) : [];
       }
+    } else {
+      galleryImages = currentProduct[0].gallery_images ? JSON.parse(currentProduct[0].gallery_images) : [];
     }
 
     // Handle image uploads
@@ -374,11 +378,8 @@ const updateProduct = async (req, res) => {
       console.error('Error cleaning up gallery images:', error);
     }
 
-    // Update product and product_images table
-    await pool.execute('START TRANSACTION');
-
+    // Update main product table only (simplified)
     try {
-      // Update main product table
       await pool.execute(`
         UPDATE products SET 
           name = ?, description = ?, category = ?, price = ?, 
@@ -400,48 +401,6 @@ const updateProduct = async (req, res) => {
         productId
       ]);
 
-      // Update product_images table
-      // First, delete existing entries
-      await pool.execute('DELETE FROM product_images WHERE product_id = ?', [productId]);
-
-      // Insert main image if exists
-      if (imageUrl) {
-        await pool.execute(`
-          INSERT INTO product_images (product_id, image_url, image_alt, display_order, is_primary) 
-          VALUES (?, ?, ?, ?, ?)
-        `, [productId, imageUrl, name, 1, true]);
-      }
-
-      // Insert gallery images
-      if (galleryImages.length > 0) {
-        for (let i = 0; i < galleryImages.length; i++) {
-          await pool.execute(`
-            INSERT INTO product_images (product_id, image_url, image_alt, display_order, is_primary) 
-            VALUES (?, ?, ?, ?, ?)
-          `, [productId, galleryImages[i], `${name} - Image ${i + 2}`, i + 2, false]);
-        }
-      }
-
-      await pool.execute('COMMIT');
-
-      // Log inventory movement if stock changed
-      const stockDifference = stock_quantity - currentProduct[0].stock_quantity;
-      if (stockDifference !== 0) {
-        await pool.execute(`
-          INSERT INTO inventory_movements (
-            product_id, movement_type, quantity, reference_type, 
-            notes, created_by
-          ) VALUES (?, ?, ?, ?, ?, ?)
-        `, [
-          productId,
-          stockDifference > 0 ? 'in' : 'out',
-          Math.abs(stockDifference),
-          'adjustment',
-          'Stock adjustment via product update',
-          req.user.id
-        ]);
-      }
-
       res.json({
         success: true,
         message: 'Product updated successfully',
@@ -451,9 +410,9 @@ const updateProduct = async (req, res) => {
         }
       });
 
-    } catch (error) {
-      await pool.execute('ROLLBACK');
-      throw error;
+    } catch (dbError) {
+      console.error('Database update error:', dbError);
+      throw dbError;
     }
 
   } catch (error) {
@@ -466,7 +425,8 @@ const updateProduct = async (req, res) => {
     
     res.status(500).json({
       success: false,
-      message: 'Failed to update product'
+      message: 'Failed to update product',
+      error: error.message
     });
   }
 };
@@ -536,12 +496,54 @@ const getAllOrders = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status } = req.body;
+    const { status, notes } = req.body;
+
+    // Get order customer info for notification
+    const [orderInfo] = await pool.execute(
+      'SELECT customer_id, order_number FROM orders WHERE id = ?',
+      [orderId]
+    );
+
+    if (orderInfo.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    // Handle undefined notes by converting to null
+    const notesValue = notes !== undefined ? notes : null;
 
     await pool.execute(
-      'UPDATE orders SET status = ? WHERE id = ?',
-      [status, orderId]
+      'UPDATE orders SET status = ?, notes = COALESCE(?, notes), updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [status, notesValue, orderId]
     );
+
+    // Send notification to customer using our notification trigger
+    const statusMessages = {
+      confirmed: 'Your order has been confirmed and is being processed',
+      processing: 'Your order is currently being processed',
+      shipped: 'Your order has been shipped and is on the way',
+      delivered: 'Your order has been delivered successfully',
+      cancelled: 'Your order has been cancelled'
+    };
+
+    if (statusMessages[status]) {
+      // Check if customer exists before sending notification
+      const [customerCheck] = await pool.execute(
+        'SELECT id FROM users WHERE id = ?',
+        [orderInfo[0].customer_id]
+      );
+
+      if (customerCheck.length > 0) {
+        await triggerOrderStatusUpdate(
+          orderInfo[0].customer_id, 
+          orderId, 
+          status, 
+          statusMessages[status]
+        );
+      }
+    }
 
     res.json({
       success: true,
@@ -686,6 +688,8 @@ const createMaterialRequest = async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `, [supplier_id, material_type, quantity, unit, required_date, description, 'pending']);
 
+    const materialRequestId = result.insertId;
+
     // Update supplier performance
     await pool.execute(`
       INSERT INTO supplier_performance (supplier_id, total_requests) 
@@ -693,10 +697,13 @@ const createMaterialRequest = async (req, res) => {
       ON DUPLICATE KEY UPDATE total_requests = total_requests + 1
     `, [supplier_id]);
 
+    // Send notification to supplier about new material request
+    await triggerSupplierDeliveryRequest(supplier_id, materialRequestId, material_type, quantity, unit);
+
     res.status(201).json({
       success: true,
       message: 'Material request created successfully',
-      data: { id: result.insertId }
+      data: { id: materialRequestId }
     });
 
   } catch (error) {

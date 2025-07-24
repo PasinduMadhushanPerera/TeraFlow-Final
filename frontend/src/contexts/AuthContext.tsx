@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{
     console.log('=== AUTH CONTEXT LOGIN DEBUG ===');
     console.log('Email:', email);
     console.log('Password length:', password?.length);
-    console.log('Making API call to:', 'http://localhost:5000/api/login');
+    console.log('Making API call to:', 'http://localhost:5000/api/auth/login');
     
     try {
       // Make API call to backend for authentication

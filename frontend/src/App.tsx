@@ -32,6 +32,10 @@ import { SupplierManagement } from './pages/admin/SupplierManagement';
 import { ForecastPanel } from './pages/admin/ForecastPanel';
 import { Reports } from './pages/admin/Reports';
 import { AdminProfile } from './pages/admin/AdminProfile';
+// Notification Components
+import { AdminNotifications } from './components/notifications/AdminNotifications';
+import { CustomerNotifications } from './components/notifications/CustomerNotifications';
+import { SupplierNotifications } from './components/notifications/SupplierNotifications';
 const theme = {
   token: {
     colorPrimary: '#8B4513',
@@ -56,7 +60,12 @@ const theme = {
 export function App() {
   return <ConfigProvider theme={theme}>
       <AuthProvider>
-        <Router>
+        <Router 
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
           <div className="min-h-screen bg-amber-50">            <Routes>
               {/* Public Routes */}
               <Route path="/" element={<PublicLayout />}>
@@ -76,6 +85,7 @@ export function App() {
                 <Route path="orders" element={<MyOrders />} />
                 <Route path="cart" element={<Cart />} />
                 <Route path="profile" element={<CustomerProfile />} />
+                <Route path="notifications" element={<CustomerNotifications />} />
               </Route>
               {/* Supplier Routes */}
               <Route path="/supplier" element={<ProtectedRoute allowedRoles={['supplier']}>
@@ -86,6 +96,7 @@ export function App() {
                 <Route path="forecasts" element={<ForecastViewer />} />
                 <Route path="history" element={<DeliveryHistory />} />
                 <Route path="profile" element={<SupplierProfile />} />
+                <Route path="notifications" element={<SupplierNotifications />} />
               </Route>
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}>
@@ -99,6 +110,7 @@ export function App() {
                 <Route path="forecast" element={<ForecastPanel />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="profile" element={<AdminProfile />} />
+                <Route path="notifications" element={<AdminNotifications />} />
               </Route>
               {/* Catch all */}
               <Route path="*" element={<Navigate to="/" replace />} />
