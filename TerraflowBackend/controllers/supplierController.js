@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const { createNotificationUtil } = require('./notificationController');
 
 // Get supplier dashboard data
 const getDashboardData = async (req, res) => {
@@ -142,6 +143,38 @@ const updateRequestStatus = async (req, res) => {
         SET completed_requests = completed_requests + 1
         WHERE supplier_id = ?
       `, [supplierId]);
+    }
+
+    // Send notification to admin about status update
+    const [adminUser] = await pool.execute(
+      'SELECT id FROM users WHERE role = "admin" ORDER BY id LIMIT 1'
+    );
+    
+    if (adminUser[0]) {
+      const statusMessages = {
+        'approved': 'has approved',
+        'accepted': 'has accepted',
+        'in_progress': 'is currently processing',
+        'completed': 'has completed',
+        'rejected': 'has rejected',
+        'cancelled': 'has cancelled'
+      };
+
+      const [materialRequest] = await pool.execute(
+        'SELECT material_type FROM material_requests WHERE id = ?',
+        [requestId]
+      );
+
+      if (materialRequest[0] && statusMessages[status]) {
+        await createNotificationUtil({
+          user_id: adminUser[0].id,
+          type: 'material_update',
+          title: '📦 Material Request Update',
+          message: `Supplier ${statusMessages[status]} the ${materialRequest[0].material_type} request.`,
+          related_type: 'material_request',
+          related_id: requestId
+        });
+      }
     }
 
     res.json({

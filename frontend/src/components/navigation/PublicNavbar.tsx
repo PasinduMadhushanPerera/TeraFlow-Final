@@ -229,11 +229,13 @@ export const PublicNavbar: React.FC = () => {
         width={300}
         className="lg:hidden"
         closeIcon={<CloseOutlined className="text-gray-600" />}
-        headerStyle={{
-          borderBottom: '1px solid #f0f0f0',
-          background: 'linear-gradient(135deg, #fef7e0 0%, #fef3c7 100%)'
+        styles={{
+          header: {
+            borderBottom: '1px solid #f0f0f0',
+            background: 'linear-gradient(135deg, #fef7e0 0%, #fef3c7 100%)'
+          },
+          body: { padding: 0 }
         }}
-        bodyStyle={{ padding: 0 }}
       >
         <div className="flex flex-col h-full">
           {/* Mobile Navigation Menu */}

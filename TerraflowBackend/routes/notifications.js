@@ -19,10 +19,10 @@ router.get('/', getUserNotifications);
 router.get('/stats', getNotificationStats);
 
 // Mark notification as read
-router.put('/:id/read', markAsRead);
+router.patch('/:id/read', markAsRead);
 
 // Mark all notifications as read
-router.put('/read-all', markAllAsRead);
+router.patch('/mark-all-read', markAllAsRead);
 
 // Create notification (admin only)
 router.post('/', createNotification);

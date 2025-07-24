@@ -181,8 +181,8 @@ app.get('/api', (req, res) => {
       notifications: {
         'GET /api/notifications': 'Get user notifications',
         'GET /api/notifications/stats': 'Get notification statistics',
-        'PUT /api/notifications/:id/read': 'Mark notification as read',
-        'PUT /api/notifications/read-all': 'Mark all notifications as read',
+        'PATCH /api/notifications/:id/read': 'Mark notification as read',
+        'PATCH /api/notifications/mark-all-read': 'Mark all notifications as read',
         'POST /api/notifications': 'Create notification (Admin)'
       },
       inventory: {

@@ -513,10 +513,10 @@ export const UserManagement: React.FC = () => {
       {/* Edit User Modal */}
       <Modal
         title="Edit User"
-        visible={editModalVisible}
+        open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={editForm}
@@ -586,10 +586,10 @@ export const UserManagement: React.FC = () => {
       {/* Create User Modal */}
       <Modal
         title="Create User"
-        visible={createModalVisible}
+        open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={createForm}

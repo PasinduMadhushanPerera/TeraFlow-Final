@@ -2,6 +2,7 @@ const { pool } = require('../config/database');
 const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs').promises;
+const { triggerPaymentConfirmation } = require('./notificationController');
 
 /**
  * Invoice Controller for managing invoices and payments
@@ -394,7 +395,10 @@ const updatePaymentStatus = async (req, res) => {
 
     // If payment succeeded, update invoice and order status
     if (payment_status === 'succeeded') {
-      const [payment] = await pool.execute('SELECT invoice_id, order_id FROM payments WHERE id = ?', [id]);
+      const [payment] = await pool.execute(
+        'SELECT p.invoice_id, p.order_id, p.amount, o.customer_id FROM payments p JOIN orders o ON p.order_id = o.id WHERE p.id = ?', 
+        [id]
+      );
       
       if (payment.length > 0) {
         // Update invoice status
@@ -409,6 +413,13 @@ const updatePaymentStatus = async (req, res) => {
         await pool.execute(
           'UPDATE orders SET payment_status = "paid", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
           [payment[0].order_id]
+        );
+
+        // Send payment confirmation notification to customer
+        await triggerPaymentConfirmation(
+          payment[0].order_id, 
+          payment[0].customer_id, 
+          payment[0].amount
         );
       }
     }

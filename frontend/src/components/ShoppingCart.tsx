@@ -296,7 +296,7 @@ const ShoppingCart: React.FC = () => {
         {cartData.items.length > 0 && (
           <Card 
             style={{ marginTop: 24, backgroundColor: '#f9f9f9' }}
-            bodyStyle={{ textAlign: 'right' }}
+            styles={{ body: { textAlign: 'right' } }}
           >
             <div style={{ marginBottom: 16 }}>
               <Text type="secondary">Total Items: {cartData.item_count}</Text>

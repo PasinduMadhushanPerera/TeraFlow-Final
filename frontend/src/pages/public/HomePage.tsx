@@ -137,7 +137,7 @@ export const HomePage: React.FC = () => {
               <Col xs={24} md={8} key={index}>
                 <Card 
                   className="text-center h-full shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-0"
-                  bodyStyle={{ padding: '2rem' }}
+                  styles={{ body: { padding: '2rem' } }}
                 >
                   <div className="mb-6">{feature.icon}</div>
                   <Title level={4} className="text-gray-800 mb-4 text-xl">
@@ -215,7 +215,7 @@ export const HomePage: React.FC = () => {
               <Col xs={24} lg={8} key={index}>
                 <Card 
                   className="h-full shadow-lg hover:shadow-xl transition-all duration-300 border-0"
-                  bodyStyle={{ padding: '2rem' }}
+                  styles={{ body: { padding: '2rem' } }}
                 >
                   <div className="mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
