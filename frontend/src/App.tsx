@@ -36,6 +36,7 @@ import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminNotifications } from './components/notifications/AdminNotifications';
 import { CustomerNotifications } from './components/notifications/CustomerNotifications';
 import { SupplierNotifications } from './components/notifications/SupplierNotifications';
+import NotificationManagement from './pages/NotificationManagement';
 const theme = {
   token: {
     colorPrimary: '#8B4513',
@@ -86,6 +87,7 @@ export function App() {
                 <Route path="cart" element={<Cart />} />
                 <Route path="profile" element={<CustomerProfile />} />
                 <Route path="notifications" element={<CustomerNotifications />} />
+                <Route path="notification-management" element={<NotificationManagement />} />
               </Route>
               {/* Supplier Routes */}
               <Route path="/supplier" element={<ProtectedRoute allowedRoles={['supplier']}>
@@ -97,6 +99,7 @@ export function App() {
                 <Route path="history" element={<DeliveryHistory />} />
                 <Route path="profile" element={<SupplierProfile />} />
                 <Route path="notifications" element={<SupplierNotifications />} />
+                <Route path="notification-management" element={<NotificationManagement />} />
               </Route>
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}>
@@ -111,6 +114,7 @@ export function App() {
                 <Route path="reports" element={<Reports />} />
                 <Route path="profile" element={<AdminProfile />} />
                 <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="notification-management" element={<NotificationManagement />} />
               </Route>
               {/* Catch all */}
               <Route path="*" element={<Navigate to="/" replace />} />

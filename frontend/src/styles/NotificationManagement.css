@@ -1,0 +1,111 @@
+.notification-management {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.notification-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.notification-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #d9d9d9;
+}
+
+.notification-item.unread {
+  border-left: 4px solid #1890ff;
+  background: #f6ffed;
+}
+
+.notification-item.read {
+  border-left: 4px solid #d9d9d9;
+  background: #fafafa;
+}
+
+.notification-item .ant-list-item-meta-avatar {
+  margin-right: 16px;
+}
+
+.notification-item .ant-list-item-meta-title {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.notification-item .ant-list-item-meta-description {
+  color: rgba(0, 0, 0, 0.65);
+  line-height: 1.5;
+}
+
+.notification-item .ant-list-item-action {
+  margin-left: 16px;
+}
+
+.notification-management .ant-card-body {
+  padding: 24px;
+}
+
+.notification-management .ant-badge-count {
+  box-shadow: 0 0 0 1px #fff;
+}
+
+.notification-management .ant-empty {
+  margin: 40px 0;
+}
+
+.notification-management .ant-list-item-action > li {
+  padding: 0;
+}
+
+.notification-management .ant-btn-text {
+  padding: 4px 8px;
+  height: auto;
+}
+
+.notification-management .ant-tag {
+  margin: 0;
+  font-size: 11px;
+  padding: 0 6px;
+  line-height: 20px;
+}
+
+.notification-management .ant-badge-status-text {
+  font-size: 12px;
+  color: #52c41a;
+}
+
+.notification-management .ant-card-small .ant-card-body {
+  padding: 12px;
+  text-align: center;
+}
+
+.notification-management .ant-row {
+  margin-bottom: 16px;
+}
+
+.notification-management .ant-space {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .notification-management {
+    padding: 10px;
+  }
+  
+  .notification-item {
+    padding: 12px;
+  }
+  
+  .notification-management .ant-card-body {
+    padding: 16px;
+  }
+  
+  .notification-management .ant-col {
+    margin-bottom: 8px;
+  }
+}
