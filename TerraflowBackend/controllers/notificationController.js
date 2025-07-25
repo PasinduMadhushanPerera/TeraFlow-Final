@@ -205,6 +205,164 @@ const getNotificationStats = async (req, res) => {
   }
 };
 
+// Delete a single notification
+const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Check if notification exists and user has permission
+    const [notification] = await pool.execute(
+      'SELECT user_id FROM notifications WHERE id = ?',
+      [id]
+    );
+
+    if (notification.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+
+    // Allow users to delete their own notifications, or admins to delete any notification
+    if (notification[0].user_id !== userId && userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own notifications'
+      });
+    }
+
+    const [result] = await pool.execute(
+      'DELETE FROM notifications WHERE id = ?',
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete notification'
+    });
+  }
+};
+
+// Delete all notifications for current user
+const deleteAllNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { user_id } = req.query; // Admin can specify user_id to delete for other users
+
+    let targetUserId = userId;
+
+    // Allow admins to delete notifications for other users
+    if (userRole === 'admin' && user_id) {
+      targetUserId = user_id;
+    }
+
+    const [result] = await pool.execute(
+      'DELETE FROM notifications WHERE user_id = ?',
+      [targetUserId]
+    );
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} notifications deleted successfully`
+    });
+  } catch (error) {
+    console.error('Delete all notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete notifications'
+    });
+  }
+};
+
+// Delete read notifications only
+const deleteReadNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { user_id } = req.query; // Admin can specify user_id
+
+    let targetUserId = userId;
+
+    // Allow admins to delete notifications for other users
+    if (userRole === 'admin' && user_id) {
+      targetUserId = user_id;
+    }
+
+    const [result] = await pool.execute(
+      'DELETE FROM notifications WHERE user_id = ? AND is_read = TRUE',
+      [targetUserId]
+    );
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} read notifications deleted successfully`
+    });
+  } catch (error) {
+    console.error('Delete read notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete read notifications'
+    });
+  }
+};
+
+// Delete notifications older than specified days
+const deleteOldNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { days = 30, user_id } = req.query;
+
+    let targetUserId = userId;
+
+    // Allow admins to delete notifications for other users
+    if (userRole === 'admin' && user_id) {
+      targetUserId = user_id;
+    }
+
+    // Validate days parameter
+    const daysNum = parseInt(days);
+    if (isNaN(daysNum) || daysNum < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Days parameter must be a positive number'
+      });
+    }
+
+    const [result] = await pool.execute(
+      'DELETE FROM notifications WHERE user_id = ? AND created_at < DATE_SUB(NOW(), INTERVAL ? DAY)',
+      [targetUserId, daysNum]
+    );
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} notifications older than ${daysNum} days deleted successfully`
+    });
+  } catch (error) {
+    console.error('Delete old notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete old notifications'
+    });
+  }
+};
+
 // System notification triggers
 const triggerLowStockAlert = async (productId, currentStock, minimumStock) => {
   try {
@@ -324,6 +482,10 @@ module.exports = {
   markAsRead,
   markAllAsRead,
   getNotificationStats,
+  deleteNotification,
+  deleteAllNotifications,
+  deleteReadNotifications,
+  deleteOldNotifications,
   // System triggers
   triggerLowStockAlert,
   triggerOrderStatusUpdate,

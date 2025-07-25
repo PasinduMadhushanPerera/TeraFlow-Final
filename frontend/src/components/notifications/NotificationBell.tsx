@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Badge, Button, Dropdown, List, Typography, Empty, Spin } from 'antd';
-import { BellOutlined } from '@ant-design/icons';
+import { Badge, Button, Dropdown, List, Typography, Empty, Spin, Popconfirm, message } from 'antd';
+import { BellOutlined, DeleteOutlined, ClearOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 
 const { Text } = Typography;
@@ -80,6 +80,100 @@ export const NotificationBell: React.FC = () => {
     }
   };
 
+  const deleteNotification = async (notificationId: number, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    try {
+      const token = localStorage.getItem('terraflow_token');
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+        setUnreadCount(prev => {
+          const deletedNotif = notifications.find(n => n.id === notificationId);
+          return deletedNotif && !deletedNotif.is_read ? Math.max(0, prev - 1) : prev;
+        });
+        message.success('Notification deleted successfully');
+      } else {
+        message.error('Failed to delete notification');
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      message.error('Failed to delete notification');
+    }
+  };
+
+  const clearAllNotifications = async (event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    try {
+      const token = localStorage.getItem('terraflow_token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/notifications', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications([]);
+        setUnreadCount(0);
+        message.success(data.message || 'All notifications cleared');
+      } else {
+        message.error('Failed to clear notifications');
+      }
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+      message.error('Failed to clear notifications');
+    }
+  };
+
+  const clearReadNotifications = async (event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    try {
+      const token = localStorage.getItem('terraflow_token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/notifications/read/clear', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(prev => prev.filter(notif => !notif.is_read));
+        message.success(data.message || 'Read notifications cleared');
+      } else {
+        message.error('Failed to clear read notifications');
+      }
+    } catch (error) {
+      console.error('Error clearing read notifications:', error);
+      message.error('Failed to clear read notifications');
+    }
+  };
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -117,7 +211,7 @@ export const NotificationBell: React.FC = () => {
   const dropdownMenu = (
     <div className="w-80 max-h-96 overflow-hidden bg-white rounded-lg shadow-lg border">
       <div className="p-4 border-b bg-gray-50">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-2">
           <Text strong>Recent Notifications</Text>
           <Button 
             type="link" 
@@ -129,6 +223,41 @@ export const NotificationBell: React.FC = () => {
           >
             View All
           </Button>
+        </div>
+        <div className="flex gap-2 mt-2">
+          <Popconfirm
+            title="Clear read notifications?"
+            description="This will delete all read notifications"
+            onConfirm={clearReadNotifications}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button 
+              size="small" 
+              icon={<ClearOutlined />}
+              type="text"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Clear Read
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Clear all notifications?"
+            description="This will permanently delete all your notifications"
+            onConfirm={clearAllNotifications}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button 
+              size="small" 
+              icon={<DeleteOutlined />}
+              type="text"
+              danger
+              onClick={(e) => e.stopPropagation()}
+            >
+              Clear All
+            </Button>
+          </Popconfirm>
         </div>
       </div>
       
@@ -165,14 +294,33 @@ export const NotificationBell: React.FC = () => {
                   <div className="flex justify-between items-start mb-1">
                     <Text 
                       strong={!notification.is_read} 
-                      className={`text-sm ${!notification.is_read ? 'text-gray-800' : 'text-gray-600'}`}
+                      className={`text-sm ${!notification.is_read ? 'text-gray-800' : 'text-gray-600'} flex-1 pr-2`}
                       ellipsis
                     >
                       {notification.title}
                     </Text>
-                    <Text type="secondary" className="text-xs ml-2 flex-shrink-0">
-                      {formatTimeAgo(notification.created_at)}
-                    </Text>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Text type="secondary" className="text-xs">
+                        {formatTimeAgo(notification.created_at)}
+                      </Text>
+                      <Popconfirm
+                        title="Delete this notification?"
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          deleteNotification(notification.id);
+                        }}
+                        okText="Yes"
+                        cancelText="No"
+                      >
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          className="text-gray-400 hover:text-red-500"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </Popconfirm>
+                    </div>
                   </div>
                   <Text 
                     type="secondary" 

@@ -13,7 +13,9 @@ import {
   Tooltip,
   Row,
   Col,
-  Statistic
+  Statistic,
+  Popconfirm,
+  Divider
 } from 'antd';
 import { 
   BellOutlined, 
@@ -23,7 +25,10 @@ import {
   ShoppingCartOutlined,
   DollarOutlined,
   UserOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  DeleteOutlined,
+  ClearOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -52,6 +57,7 @@ export const AdminNotifications: React.FC = () => {
   const [stats, setStats] = useState<NotificationStats>({ total: 0, unread: 0, last_24h: 0 });
   const [loading, setLoading] = useState(true);
   const [markingAsRead, setMarkingAsRead] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<number | string | null>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -155,6 +161,127 @@ export const AdminNotifications: React.FC = () => {
     }
   };
 
+  const handleDeleteNotification = async (notificationId: number) => {
+    setDeleteLoading(notificationId);
+    try {
+      const token = localStorage.getItem('terraflow_token');
+      if (!token) return;
+
+      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        message.success('Notification deleted successfully');
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+        await fetchStats();
+      } else {
+        const errorData = await response.json();
+        message.error(errorData.message || 'Failed to delete notification');
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      message.error('Error deleting notification');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const handleClearReadNotifications = async () => {
+    setDeleteLoading('read');
+    try {
+      const token = localStorage.getItem('terraflow_token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/notifications/read/clear', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        message.success(result.message || 'Read notifications cleared successfully');
+        await Promise.all([fetchNotifications(), fetchStats()]);
+      } else {
+        const errorData = await response.json();
+        message.error(errorData.message || 'Failed to clear read notifications');
+      }
+    } catch (error) {
+      console.error('Error clearing read notifications:', error);
+      message.error('Error clearing read notifications');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    setDeleteLoading('all');
+    try {
+      const token = localStorage.getItem('terraflow_token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/notifications', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        message.success(result.message || 'All notifications cleared successfully');
+        setNotifications([]);
+        await fetchStats();
+      } else {
+        const errorData = await response.json();
+        message.error(errorData.message || 'Failed to clear all notifications');
+      }
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      message.error('Error clearing all notifications');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const handleClearOldNotifications = async () => {
+    setDeleteLoading('old');
+    try {
+      const token = localStorage.getItem('terraflow_token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/notifications/old/cleanup', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        message.success(result.message || 'Old notifications cleaned up successfully');
+        await Promise.all([fetchNotifications(), fetchStats()]);
+      } else {
+        const errorData = await response.json();
+        message.error(errorData.message || 'Failed to cleanup old notifications');
+      }
+    } catch (error) {
+      console.error('Error cleaning up old notifications:', error);
+      message.error('Error cleaning up old notifications');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'order_update':
@@ -252,6 +379,69 @@ export const AdminNotifications: React.FC = () => {
           </Space>
         </div>
 
+        {/* Delete Actions */}
+        <div className="mb-4">
+          <Space wrap>
+            <Popconfirm
+              title="Clear all read notifications?"
+              description="This action cannot be undone."
+              onConfirm={handleClearReadNotifications}
+              okText="Yes"
+              cancelText="No"
+              disabled={notifications.filter(n => n.is_read).length === 0}
+            >
+              <Button 
+                type="default" 
+                icon={<ClearOutlined />}
+                loading={deleteLoading === 'read'}
+                disabled={notifications.filter(n => n.is_read).length === 0}
+                size="small"
+              >
+                Clear Read ({notifications.filter(n => n.is_read).length})
+              </Button>
+            </Popconfirm>
+
+            <Popconfirm
+              title="Clear old notifications?"
+              description="This will delete notifications older than 7 days."
+              onConfirm={handleClearOldNotifications}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button 
+                type="default" 
+                icon={<ClockCircleOutlined />}
+                loading={deleteLoading === 'old'}
+                size="small"
+              >
+                Clear Old (7+ days)
+              </Button>
+            </Popconfirm>
+
+            <Popconfirm
+              title="Clear all notifications?"
+              description="This will delete ALL notifications. This action cannot be undone."
+              onConfirm={handleClearAllNotifications}
+              okText="Yes"
+              cancelText="No"
+              disabled={notifications.length === 0}
+            >
+              <Button 
+                type="primary" 
+                danger 
+                icon={<DeleteOutlined />}
+                loading={deleteLoading === 'all'}
+                disabled={notifications.length === 0}
+                size="small"
+              >
+                Clear All ({notifications.length})
+              </Button>
+            </Popconfirm>
+          </Space>
+        </div>
+
+        <Divider />
+
         {/* Notification Statistics */}
         <Row gutter={16} className="mb-6">
           <Col span={8}>
@@ -316,7 +506,24 @@ export const AdminNotifications: React.FC = () => {
                         size="small"
                       />
                     </Tooltip>
-                  )
+                  ),
+                  <Tooltip title="Delete notification">
+                    <Popconfirm
+                      title="Delete this notification?"
+                      description="This action cannot be undone."
+                      onConfirm={() => handleDeleteNotification(notification.id)}
+                      okText="Yes"
+                      cancelText="No"
+                    >
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        loading={deleteLoading === notification.id}
+                        size="small"
+                      />
+                    </Popconfirm>
+                  </Tooltip>
                 ].filter(Boolean)}
               >
                 <List.Item.Meta

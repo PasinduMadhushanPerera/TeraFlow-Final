@@ -13,7 +13,9 @@ import {
   Tooltip,
   Row,
   Col,
-  Statistic
+  Statistic,
+  Popconfirm,
+  Divider
 } from 'antd';
 import { 
   BellOutlined, 
@@ -23,7 +25,10 @@ import {
   DollarOutlined,
   TruckOutlined,
   ReloadOutlined,
-  GiftOutlined
+  GiftOutlined,
+  DeleteOutlined,
+  ClearOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 
