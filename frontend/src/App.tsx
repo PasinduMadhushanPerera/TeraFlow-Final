@@ -22,6 +22,7 @@ import { SupplierDashboard } from './pages/supplier/SupplierDashboard';
 import { MaterialRequests } from './pages/supplier/MaterialRequests';
 import { ForecastViewer } from './pages/supplier/ForecastViewer';
 import { DeliveryHistory } from './pages/supplier/DeliveryHistory';
+import { DeliveryStatusUpdate } from './pages/supplier/DeliveryStatusUpdate';
 import { SupplierProfile } from './pages/supplier/SupplierProfile';
 // Admin Pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -95,6 +96,7 @@ export function App() {
                   </ProtectedRoute>}>
                 <Route index element={<SupplierDashboard />} />
                 <Route path="requests" element={<MaterialRequests />} />
+                <Route path="deliveries/:requestId" element={<DeliveryStatusUpdate />} />
                 <Route path="forecasts" element={<ForecastViewer />} />
                 <Route path="history" element={<DeliveryHistory />} />
                 <Route path="profile" element={<SupplierProfile />} />
