@@ -1,5 +1,33 @@
 const { pool } = require('../config/database');
 
+// Helper function to get sample images for categories
+const getSampleImagesForCategory = (category) => {
+  const sampleImages = {
+    'raw_materials': [
+      'product-1751996152203-415241586.png',
+      'product-1752059935855-342658321.jpg',
+      'product-1752059935865-863683913.jpg'
+    ],
+    'finished_products': [
+      'product-1752059935871-29042072.webp',
+      'product-1752059935872-486951310.jpg',
+      'product-1752059935879-361276407.jpg'
+    ],
+    'tools': [
+      'product-1752059935880-156882767.jpg',
+      'product-1753389463170-608121192.webp',
+      'product-1753389463212-880955216.jpg'
+    ],
+    'packaging': [
+      'product-1753389463251-40647797.jpg',
+      'product-1753389463260-60626732.jpg',
+      'product-1753389668802-810427402.jpg'
+    ]
+  };
+  
+  return sampleImages[category] || sampleImages['finished_products'];
+};
+
 // Get customer dashboard data
 const getDashboardData = async (req, res) => {
   try {
@@ -51,7 +79,9 @@ const getProducts = async (req, res) => {
     let query = `
       SELECT 
         id, name, description, category, price, 
-        stock_quantity, unit, image_url
+        stock_quantity, minimum_stock, unit, sku, image_url, 
+        is_active, clay_type, dimensions, firing_temperature,
+        weight_kg, production_time_days, glaze_type
       FROM products 
       WHERE is_active = true AND stock_quantity > 0
     `;
@@ -71,9 +101,132 @@ const getProducts = async (req, res) => {
 
     const [products] = await pool.execute(query, params);
 
+    console.log('Raw products from database:', products.length);
+    if (products.length > 0) {
+      console.log('Sample product:', products[0]);
+    }
+
+    // Format image URLs to include full server path and create multiple images per product
+    const formattedProducts = products.map(product => {
+      // Use actual database image URLs - prioritize database images
+      let primaryImageUrl = null;
+      
+      // If the product has a database image, use it with full server path
+      if (product.image_url) {
+        if (product.image_url.startsWith('http')) {
+          primaryImageUrl = product.image_url;
+        } else {
+          primaryImageUrl = `http://localhost:5000${product.image_url}`;
+        }
+      }
+      
+      // Create multiple images for carousel - assign 2-4 images per product
+      const categoryImageSets = {
+        'raw_materials': [
+          '/uploads/products/product-1751996152203-415241586.png',
+          '/uploads/products/product-1752059935855-342658321.jpg',
+          '/uploads/products/product-1752059935865-863683913.jpg'
+        ],
+        'finished_products': [
+          '/uploads/products/product-1752059935871-29042072.webp',
+          '/uploads/products/product-1752059935872-486951310.jpg',
+          '/uploads/products/product-1752059935879-361276407.jpg',
+          '/uploads/products/product-1753520500155-346325479.webp',
+          '/uploads/products/product-1753520500156-668581329.jpg',
+          '/uploads/products/product-1753520500165-100157489.jpg'
+        ],
+        'tools': [
+          '/uploads/products/product-1752059935880-156882767.jpg',
+          '/uploads/products/product-1753389463170-608121192.webp',
+          '/uploads/products/product-1753389463212-880955216.jpg',
+          '/uploads/products/product-1753522614821-996075903.jpg',
+          '/uploads/products/product-1753522614835-10788241.webp'
+        ],
+        'packaging': [
+          '/uploads/products/product-1753389463251-40647797.jpg',
+          '/uploads/products/product-1753389463260-60626732.jpg',
+          '/uploads/products/product-1753389668802-810427402.jpg',
+          '/uploads/products/product-1753389668803-818926462.jpg'
+        ],
+        'chemicals': [
+          '/uploads/products/product-1753520418983-431755433.jpg',
+          '/uploads/products/product-1753520419009-562194273.webp',
+          '/uploads/products/product-1753522646102-879295014.jpg'
+        ]
+      };
+
+      // Get images for this product's category
+      const categoryImages = categoryImageSets[product.category] || categoryImageSets['finished_products'];
+      
+      // Create 2-4 images per product using different images from the category
+      const numImages = 2 + (product.id % 3); // 2-4 images
+      const productImages = [];
+      
+      // Always include the primary image first if it exists
+      if (primaryImageUrl) {
+        productImages.push({
+          image_url: primaryImageUrl,
+          image_alt: product.name,
+          display_order: 0,
+          is_primary: true
+        });
+      }
+      
+      // Add additional images from category set
+      for (let i = 1; i < numImages; i++) {
+        const imageIndex = (product.id + i - 1) % categoryImages.length;
+        const imageUrl = `http://localhost:5000${categoryImages[imageIndex]}`;
+        
+        // Don't duplicate the primary image
+        if (imageUrl !== primaryImageUrl) {
+          productImages.push({
+            image_url: imageUrl,
+            image_alt: `${product.name} - Image ${i + 1}`,
+            display_order: i,
+            is_primary: false
+          });
+        }
+      }
+      
+      // If no primary image from database, use fallback
+      if (!primaryImageUrl) {
+        console.log(`⚠️ No database image for product ${product.id}: ${product.name}`);
+        const fallbackImages = {
+          'packaging': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop',
+          'finished_products': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop',
+          'tools': 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=300&h=200&fit=crop',
+          'raw_materials': 'https://images.unsplash.com/photo-1594736797933-d0d2a2752ba9?w=300&h=200&fit=crop'
+        };
+        primaryImageUrl = fallbackImages[product.category] || fallbackImages['finished_products'];
+      }
+      
+      // Create imageUrls array for backward compatibility
+      const imageUrls = productImages.map(img => img.image_url);
+      
+      return {
+        ...product,
+        price: parseFloat(product.price) || 0,
+        stock_quantity: parseInt(product.stock_quantity) || 0,
+        minimum_stock: parseInt(product.minimum_stock) || 0,
+        firing_temperature: product.firing_temperature ? parseInt(product.firing_temperature) : null,
+        weight_kg: product.weight_kg ? parseFloat(product.weight_kg) : null,
+        production_time_days: product.production_time_days ? parseInt(product.production_time_days) : null,
+        image_url: primaryImageUrl,
+        primary_image: primaryImageUrl,
+        images: productImages,
+        image_urls: imageUrls,
+        has_multiple_images: productImages.length > 1
+      };
+    });
+
+    console.log('Sample formatted product:', formattedProducts[0]);
+    if (formattedProducts.length > 0) {
+      console.log('Generated image URLs:', formattedProducts[0]?.image_urls);
+    }
+
     res.json({
       success: true,
-      data: products
+      data: formattedProducts
     });
 
   } catch (error) {

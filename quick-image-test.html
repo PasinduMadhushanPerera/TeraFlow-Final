@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TerraFlow Image Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-image { margin: 10px; border: 1px solid #ccc; display: inline-block; }
+        .test-image img { width: 300px; height: 200px; object-fit: cover; display: block; }
+        .test-image p { margin: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>TerraFlow Image Display Test</h1>
+    <p>Testing the exact URLs that will be used in the application:</p>
+    
+    <div class="test-image">
+        <img src="https://via.placeholder.com/300x200/8B4513/FFFFFF?text=Bubble+Wrap" alt="Bubble Wrap">
+        <p>Packaging Product</p>
+    </div>
+    
+    <div class="test-image">
+        <img src="https://via.placeholder.com/300x200/D2691E/FFFFFF?text=Ceramic+Bowls" alt="Ceramic Bowls">
+        <p>Finished Product</p>
+    </div>
+    
+    <div class="test-image">
+        <img src="https://via.placeholder.com/300x200/CD853F/FFFFFF?text=Ceramic+Boxes" alt="Ceramic Boxes">
+        <p>Packaging Product</p>
+    </div>
+    
+    <script>
+        console.log('Testing image URLs...');
+        const images = document.querySelectorAll('img');
+        images.forEach((img, index) => {
+            img.onload = () => console.log(`Image ${index + 1} loaded successfully: ${img.src}`);
+            img.onerror = () => console.error(`Image ${index + 1} failed to load: ${img.src}`);
+        });
+    </script>
+</body>
+</html>

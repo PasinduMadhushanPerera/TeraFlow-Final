@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TerraFlow - Quick Access</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .status {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .status-item {
+            text-align: center;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 auto 5px;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 10px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-secondary {
+            background: #28a745;
+        }
+        .btn-secondary:hover {
+            background: #218838;
+        }
+        .info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .test-credentials {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .test-credentials h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .credentials {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🌍 TerraFlow</div>
+        <div class="subtitle">Supply Chain Management System</div>
+        
+        <div class="status">
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <small>Frontend Server</small>
+            </div>
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <small>Backend Server</small>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>🎉 System Status:</strong> Both servers are running successfully!
+            <br><br>
+            <strong>Frontend:</strong> http://localhost:5173<br>
+            <strong>Backend:</strong> http://localhost:5000
+        </div>
+
+        <div class="test-credentials">
+            <h4>🔑 Test Customer Account</h4>
+            <div class="credentials">Email: customer@test.com</div>
+            <div class="credentials">Password: customer123</div>
+        </div>
+
+        <div style="margin: 30px 0;">
+            <a href="http://localhost:5173" class="btn" target="_blank">
+                🚀 Open TerraFlow App
+            </a>
+            <a href="http://localhost:5000" class="btn btn-secondary" target="_blank">
+                🔧 Backend API
+            </a>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 14px; color: #666;">
+            <strong>Quick Test Flow:</strong><br>
+            1. Click "Open TerraFlow App"<br>
+            2. Use customer credentials to login<br>
+            3. Browse the product catalog<br>
+            4. Test the enhanced error handling and debug features
+        </div>
+    </div>
+
+    <script>
+        // Check server status periodically
+        async function checkServers() {
+            try {
+                const frontendResponse = await fetch('http://localhost:5173');
+                const backendResponse = await fetch('http://localhost:5000');
+                
+                console.log('Frontend status:', frontendResponse.status);
+                console.log('Backend status:', backendResponse.status);
+                
+                if (frontendResponse.ok && backendResponse.ok) {
+                    document.querySelectorAll('.status-dot').forEach(dot => {
+                        dot.style.background = '#4CAF50';
+                    });
+                }
+            } catch (error) {
+                console.log('Server check failed:', error);
+                document.querySelectorAll('.status-dot').forEach(dot => {
+                    dot.style.background = '#f44336';
+                });
+            }
+        }
+
+        // Check servers every 30 seconds
+        setInterval(checkServers, 30000);
+        checkServers(); // Initial check
+    </script>
+</body>
+</html>

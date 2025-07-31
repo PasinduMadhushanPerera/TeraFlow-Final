@@ -62,17 +62,40 @@ export const ProductCatalog: React.FC = () => {
   const [showOutOfStock, setShowOutOfStock] = useState(true);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('ASC');
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, [currentPage, searchTerm, categoryFilter, priceRange, showOutOfStock, sortBy, sortOrder]);
 
+  const handleImageError = (imageUrl: string, fallbackUrl: string, targetElement: HTMLImageElement) => {
+    // Only change if not already the fallback to prevent infinite loops
+    if (targetElement.src !== fallbackUrl && !failedImages.has(imageUrl)) {
+      setFailedImages(prev => new Set(prev).add(imageUrl));
+      targetElement.src = fallbackUrl;
+    }
+  };
+
   // Helper function to get proper image URL
   const getImageUrl = (url: string) => {
-    if (!url) return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop';
+    const fallbackImage = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
+    if (!url || url.trim() === '') return fallbackImage;
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    if (url.startsWith('/')) return `http://localhost:5000${url}`;
+    return `http://localhost:5000/${url}`;
+  };
+
+  const getDisplayImageUrl = (imageUrl: string) => {
+    const fallbackImage = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
+    const processedUrl = getImageUrl(imageUrl);
+    
+    // If this image URL has failed before, use fallback immediately
+    if (failedImages.has(processedUrl)) {
+      return fallbackImage;
+    }
+    
+    return processedUrl;
   };
 
   const fetchProducts = async () => {
@@ -388,7 +411,8 @@ export const ProductCatalog: React.FC = () => {
                                   }}
                                   onError={(e) => {
                                     const target = e.target as HTMLImageElement;
-                                    target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop';
+                                    const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
+                                    handleImageError(target.src, fallbackUrl, target);
                                   }}
                                 />
                               </div>
@@ -401,7 +425,8 @@ export const ProductCatalog: React.FC = () => {
                             style={{ height: '200px', objectFit: 'cover', width: '100%' }}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop';
+                              const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
+                              handleImageError(target.src, fallbackUrl, target);
                             }}
                           />
                         )}
@@ -601,7 +626,8 @@ export const ProductCatalog: React.FC = () => {
                             }}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop';
+                              const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop&auto=format';
+                              handleImageError(target.src, fallbackUrl, target);
                             }}
                           />
                         </div>
@@ -619,7 +645,8 @@ export const ProductCatalog: React.FC = () => {
                       }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop';
+                        const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop&auto=format';
+                        handleImageError(target.src, fallbackUrl, target);
                       }}
                     />
                   )}
