@@ -5,9 +5,9 @@ import {
   DollarOutlined, 
   UserOutlined, 
   StockOutlined,
-  TrendingUpOutlined,
+  // TrendingUpOutlined,  // Not available in @ant-design/icons
   WarningOutlined,
-  CheckCircleOutlined,
+  // CheckCircleOutlined,  // Unused import
   ClockCircleOutlined,
   ExclamationCircleOutlined 
 } from '@ant-design/icons';

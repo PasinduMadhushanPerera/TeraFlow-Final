@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TerraFlow Image Display Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .image-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fafafa;
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-card .info {
+            padding: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .status.error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ TerraFlow Image Display Test</h1>
+        <p>This page tests different image display scenarios for the TerraFlow application.</p>
+
+        <div class="test-section">
+            <h2>✅ Placeholder Images (Always Work)</h2>
+            <p>These placeholder images should always display and represent what users will see:</p>
+            <div class="image-grid">
+                <div class="image-card">
+                    <img src="https://via.placeholder.com/300x200/8B4513/FFFFFF?text=Clay+Bowl" alt="Clay Bowl">
+                    <div class="info">
+                        <strong>Clay Bowl</strong><br>
+                        URL: via.placeholder.com<br>
+                        <span class="status success">✓ Always Available</span>
+                    </div>
+                </div>
+                <div class="image-card">
+                    <img src="https://via.placeholder.com/300x200/D2691E/FFFFFF?text=Pottery+Vase" alt="Pottery Vase">
+                    <div class="info">
+                        <strong>Pottery Vase</strong><br>
+                        URL: via.placeholder.com<br>
+                        <span class="status success">✓ Always Available</span>
+                    </div>
+                </div>
+                <div class="image-card">
+                    <img src="https://via.placeholder.com/300x200/CD853F/FFFFFF?text=Ceramic+Mug" alt="Ceramic Mug">
+                    <div class="info">
+                        <strong>Ceramic Mug</strong><br>
+                        URL: via.placeholder.com<br>
+                        <span class="status success">✓ Always Available</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Backend Server Images (May Fail)</h2>
+            <p>These images depend on the backend server running on localhost:5000:</p>
+            <div class="image-grid">
+                <div class="image-card">
+                    <img src="http://localhost:5000/uploads/products/product-1751996152203-415241586.png" 
+                         alt="Server Image 1"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none; padding: 20px; text-align: center; background: #f8d7da; color: #721c24;">
+                        ❌ Server Image Failed to Load
+                    </div>
+                    <div class="info">
+                        <strong>Server Image 1</strong><br>
+                        URL: localhost:5000/uploads<br>
+                        <span class="status warning">⚠️ Requires Backend</span>
+                    </div>
+                </div>
+                <div class="image-card">
+                    <img src="http://localhost:5000/uploads/products/product-1752059935855-342658321.jpg" 
+                         alt="Server Image 2"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display:none; padding: 20px; text-align: center; background: #f8d7da; color: #721c24;">
+                        ❌ Server Image Failed to Load
+                    </div>
+                    <div class="info">
+                        <strong>Server Image 2</strong><br>
+                        URL: localhost:5000/uploads<br>
+                        <span class="status warning">⚠️ Requires Backend</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 What This Means</h2>
+            <ul>
+                <li><strong>If placeholder images show:</strong> Frontend image display is working correctly</li>
+                <li><strong>If server images show:</strong> Backend is running and serving images properly</li>
+                <li><strong>If server images fail:</strong> Backend may not be running or image files missing</li>
+                <li><strong>Recommendation:</strong> Use placeholder images as primary fallback for reliability</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Next Steps</h2>
+            <ol>
+                <li>Ensure this test page shows placeholder images correctly</li>
+                <li>Start your backend server: <code>cd TerraflowBackend && node server.js</code></li>
+                <li>Refresh this page to see if server images load</li>
+                <li>If server images load, your TerraFlow app should work properly</li>
+                <li>If only placeholders work, the app will still function with backup images</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Check image loading status
+        window.addEventListener('load', function() {
+            const images = document.querySelectorAll('img');
+            let loaded = 0;
+            let failed = 0;
+            
+            images.forEach(img => {
+                if (img.complete) {
+                    if (img.naturalWidth === 0) {
+                        failed++;
+                    } else {
+                        loaded++;
+                    }
+                }
+            });
+            
+            console.log('Image Loading Status:', {
+                total: images.length,
+                loaded: loaded,
+                failed: failed
+            });
+        });
+    </script>
+</body>
+</html>

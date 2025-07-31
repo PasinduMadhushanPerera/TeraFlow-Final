@@ -490,29 +490,37 @@ const initializeDatabase = async () => {
 
         // Add order items for each order
         const orderId = orderResult.insertId;
-        if (order.order_number === 'ORD-001') {
+        
+        // Get actual product IDs from database instead of using hard-coded values
+        const [ceramicBowls] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['CB001']);
+        const [redClay] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['RC001']);
+        const [clayTools] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['CTS001']);
+        const [clearGlaze] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['CG001']);
+        const [whiteClay] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['WC001']);
+        
+        if (order.order_number === 'ORD-001' && ceramicBowls.length > 0 && redClay.length > 0) {
           await connection.execute(`
             INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
             VALUES (?, ?, ?, ?, ?)
-          `, [orderId, 4, 4, 2599.00, 10396.00]); // Ceramic Bowls
+          `, [orderId, ceramicBowls[0].id, 4, 2599.00, 10396.00]); // Ceramic Bowls
           await connection.execute(`
             INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
             VALUES (?, ?, ?, ?, ?)
-          `, [orderId, 1, 5, 1599.00, 7995.00]); // Red Clay
-        } else if (order.order_number === 'ORD-002') {
+          `, [orderId, redClay[0].id, 5, 1599.00, 7995.00]); // Red Clay
+        } else if (order.order_number === 'ORD-002' && clayTools.length > 0) {
           await connection.execute(`
             INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
             VALUES (?, ?, ?, ?, ?)
-          `, [orderId, 5, 1, 8999.00, 8999.00]); // Clay Tools Set
-        } else if (order.order_number === 'ORD-003') {
+          `, [orderId, clayTools[0].id, 1, 8999.00, 8999.00]); // Clay Tools Set
+        } else if (order.order_number === 'ORD-003' && clearGlaze.length > 0 && whiteClay.length > 0) {
           await connection.execute(`
             INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
             VALUES (?, ?, ?, ?, ?)
-          `, [orderId, 3, 2, 1899.00, 3798.00]); // Clear Glaze
+          `, [orderId, clearGlaze[0].id, 2, 1899.00, 3798.00]); // Clear Glaze
           await connection.execute(`
             INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal)
             VALUES (?, ?, ?, ?, ?)
-          `, [orderId, 2, 5, 2250.00, 11250.00]); // White Stoneware Clay
+          `, [orderId, whiteClay[0].id, 5, 2250.00, 11250.00]); // White Stoneware Clay
         }
       }
 
@@ -522,35 +530,48 @@ const initializeDatabase = async () => {
     // Insert sample production recommendations
     const [recommendationsExist] = await connection.execute('SELECT COUNT(*) as count FROM production_recommendations');
     if (recommendationsExist[0].count === 0) {
-      const recommendations = [
-        {
-          product_id: 4, // Ceramic Bowls
+      // Get actual product IDs from database
+      const [ceramicBowls] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['CB001']);
+      const [redClay] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['RC001']);
+      const [clayTools] = await connection.execute('SELECT id FROM products WHERE sku = ? LIMIT 1', ['CTS001']);
+      
+      const recommendations = [];
+      
+      if (ceramicBowls.length > 0) {
+        recommendations.push({
+          product_id: ceramicBowls[0].id,
           recommended_quantity: 50,
           priority: 'high',
           reason: 'High demand detected, current stock below optimal level',
           current_stock: 146,
           recommended_stock: 200,
           profit_margin: 65.00
-        },
-        {
-          product_id: 1, // Red Clay
+        });
+      }
+      
+      if (redClay.length > 0) {
+        recommendations.push({
+          product_id: redClay[0].id,
           recommended_quantity: 200,
           priority: 'medium', 
           reason: 'Seasonal demand increase expected',
           current_stock: 500,
           recommended_stock: 700,
           profit_margin: 45.00
-        },
-        {
-          product_id: 5, // Pottery Tools Set
+        });
+      }
+      
+      if (clayTools.length > 0) {
+        recommendations.push({
+          product_id: clayTools[0].id,
           recommended_quantity: 25,
           priority: 'low',
           reason: 'Maintain steady inventory levels',
           current_stock: 75,
           recommended_stock: 100,
           profit_margin: 55.00
-        }
-      ];
+        });
+      }
 
       for (const rec of recommendations) {
         await connection.execute(`

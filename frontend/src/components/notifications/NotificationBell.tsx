@@ -271,7 +271,7 @@ export const NotificationBell: React.FC = () => {
             <Empty 
               description="No notifications" 
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              imageStyle={{ height: 40 }}
+              styles={{ image: { height: 40 } }}
             />
           </div>
         ) : (
@@ -350,7 +350,7 @@ export const NotificationBell: React.FC = () => {
   return (
     <Dropdown
       menu={{ items: [] }}
-      dropdownRender={() => dropdownMenu}
+      popupRender={() => dropdownMenu}
       trigger={['click']}
       placement="bottomRight"
       open={dropdownVisible}

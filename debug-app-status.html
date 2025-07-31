@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeraFlow Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-info { background: #f0f0f0; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #ffe6e6; border-left: 4px solid #ff0000; }
+        .success { background: #e6ffe6; border-left: 4px solid #00aa00; }
+    </style>
+</head>
+<body>
+    <h1>TeraFlow Application Debug</h1>
+    
+    <div class="debug-info">
+        <h3>Server Status Check</h3>
+        <p id="backend-status">Backend: Checking...</p>
+        <p id="frontend-status">Frontend: Checking...</p>
+    </div>
+
+    <div class="debug-info">
+        <h3>Quick Access Links</h3>
+        <p><a href="http://localhost:5173/" target="_blank">Frontend Application</a></p>
+        <p><a href="http://localhost:5000/health" target="_blank">Backend Health Check</a></p>
+        <p><a href="http://localhost:5000/api" target="_blank">Backend API Docs</a></p>
+    </div>
+
+    <div class="debug-info">
+        <h3>Console Logs</h3>
+        <div id="console-output" style="background: #000; color: #0f0; padding: 10px; font-family: monospace; max-height: 200px; overflow-y: auto;">
+            Ready for logs...<br>
+        </div>
+    </div>
+
+    <script>
+        const consoleOutput = document.getElementById('console-output');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f00' : type === 'success' ? '#0f0' : '#fff';
+            consoleOutput.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span><br>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        // Check backend
+        fetch('http://localhost:5000/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('backend-status').innerHTML = 'Backend: ✅ Running';
+                document.getElementById('backend-status').className = 'success';
+                addLog('Backend health check successful', 'success');
+            })
+            .catch(error => {
+                document.getElementById('backend-status').innerHTML = 'Backend: ❌ Error';
+                document.getElementById('backend-status').className = 'error';
+                addLog('Backend error: ' + error.message, 'error');
+            });
+
+        // Check frontend
+        fetch('http://localhost:5173/')
+            .then(response => {
+                document.getElementById('frontend-status').innerHTML = 'Frontend: ✅ Running';
+                document.getElementById('frontend-status').className = 'success';
+                addLog('Frontend accessible', 'success');
+            })
+            .catch(error => {
+                document.getElementById('frontend-status').innerHTML = 'Frontend: ❌ Error';
+                document.getElementById('frontend-status').className = 'error';
+                addLog('Frontend error: ' + error.message, 'error');
+            });
+
+        addLog('Debug page loaded');
+    </script>
+</body>
+</html>

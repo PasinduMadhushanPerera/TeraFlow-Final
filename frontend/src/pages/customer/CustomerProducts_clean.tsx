@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Row, Col, Button, message, Tag, Input, Select, Space, Badge, Spin, Carousel } from 'antd';
-import { ShoppingCartOutlined, SearchOutlined, FilterOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Card, Typography, Row, Col, Button, message, Tag, Input, Select, Space, Badge, Spin } from 'antd';
+import { ShoppingCartOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
 const { Option } = Select;
-
-interface ProductImage {
-  image_url: string;
-  image_alt?: string;
-  display_order: number;
-  is_primary: boolean;
-}
 
 interface Product {
   id: number;
@@ -24,10 +17,6 @@ interface Product {
   unit: string;
   sku: string;
   image_url: string;
-  primary_image: string;
-  images: ProductImage[];
-  image_urls: string[];
-  has_multiple_images: boolean;
   clay_type?: string;
   dimensions?: string;
   firing_temperature?: number;
@@ -42,61 +31,6 @@ export const CustomerProducts: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [cartLoading, setCartLoading] = useState<{ [key: number]: boolean }>({});
-  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-
-  // Custom Arrow Component for Carousel
-  const CustomArrow = ({ direction, onClick }: { direction: 'left' | 'right', onClick?: () => void }) => (
-    <Button
-      type="text"
-      icon={direction === 'left' ? <LeftOutlined /> : <RightOutlined />}
-      onClick={onClick}
-      style={{
-        position: 'absolute',
-        top: '50%',
-        [direction]: 10,
-        transform: 'translateY(-50%)',
-        zIndex: 2,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '50%',
-        width: '32px',
-        height: '32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    />
-  );
-
-  // Helper function to get proper image URL
-  const getImageUrl = (url: string) => {
-    const fallbackImage = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
-    if (!url || url.trim() === '') return fallbackImage;
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/')) return `http://localhost:5000${url}`;
-    return `http://localhost:5000/${url}`;
-  };
-
-  const handleImageError = (imageUrl: string, fallbackUrl: string, targetElement: HTMLImageElement) => {
-    // Only change if not already the fallback to prevent infinite loops
-    if (targetElement.src !== fallbackUrl && !failedImages.has(imageUrl)) {
-      setFailedImages(prev => new Set(prev).add(imageUrl));
-      targetElement.src = fallbackUrl;
-    }
-  };
-
-  const getDisplayImageUrl = (imageUrl: string) => {
-    const fallbackImage = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
-    const processedUrl = getImageUrl(imageUrl);
-    
-    // If this image URL has failed before, use fallback immediately
-    if (failedImages.has(processedUrl)) {
-      return fallbackImage;
-    }
-    
-    return processedUrl;
-  };
 
   useEffect(() => {
     fetchProducts();
@@ -124,23 +58,9 @@ export const CustomerProducts: React.FC = () => {
 
       const result = await response.json();
       if (result.success) {
-        console.log('Raw API response:', result.data?.slice(0, 2)); // Debug first 2 products
-        
-        // Ensure numeric fields are properly converted with fallbacks
-        const processedProducts = result.data.map((product: any) => ({
-          ...product,
-          price: parseFloat(product.price) || 0,
-          stock_quantity: parseInt(product.stock_quantity) || 0,
-          minimum_stock: parseInt(product.minimum_stock) || 0,
-          firing_temperature: product.firing_temperature ? parseInt(product.firing_temperature) : undefined
-        }));
-        
-        console.log('Processed products sample:', processedProducts[0]);
-        console.log('Sample product image URL:', processedProducts[0]?.image_url);
-        
-        setProducts(processedProducts);
+        setProducts(result.data);
         // Extract unique categories
-        const uniqueCategories = [...new Set(processedProducts.map((p: Product) => p.category))] as string[];
+        const uniqueCategories = [...new Set(result.data.map((p: Product) => p.category))] as string[];
         setCategories(uniqueCategories);
       } else {
         message.error(result.message || 'Failed to fetch products');
@@ -228,24 +148,6 @@ export const CustomerProducts: React.FC = () => {
 
   return (
     <div style={{ padding: 24 }}>
-      {/* Add custom styles for carousel */}
-      <style>
-        {`
-          .custom-dots .slick-dots {
-            bottom: 8px;
-          }
-          .custom-dots .slick-dots li button {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-          }
-          .custom-dots .slick-dots li.slick-active button {
-            background: white;
-          }
-        `}
-      </style>
-      
       <Title level={2} style={{ color: '#8B4513', marginBottom: 24 }}>
         <ShoppingCartOutlined style={{ marginRight: 8 }} />
         Clay Products Catalog
@@ -293,80 +195,31 @@ export const CustomerProducts: React.FC = () => {
                 hoverable
                 style={{ height: '100%' }}
                 cover={
-                  <div style={{ position: 'relative', height: 200, overflow: 'hidden', backgroundColor: '#f5f5f5' }}>
-                    {product.images && product.images.length > 1 ? (
-                      <Carousel
-                        arrows
-                        prevArrow={<CustomArrow direction="left" />}
-                        nextArrow={<CustomArrow direction="right" />}
-                        dots={{ className: 'custom-dots' }}
-                        style={{ height: '200px' }}
-                      >
-                        {product.images.map((image, index) => (
-                          <div key={index}>
-                            <img
-                              alt={image.image_alt || product.name}
-                              src={getDisplayImageUrl(image.image_url)}
-                              style={{ 
-                                height: '200px', 
-                                width: '100%', 
-                                objectFit: 'cover' 
-                              }}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
-                                handleImageError(target.src, fallbackUrl, target);
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </Carousel>
-                    ) : (
+                  <div style={{ height: 200, overflow: 'hidden', backgroundColor: '#f5f5f5' }}>
+                    {product.image_url ? (
                       <img
                         alt={product.name}
-                        src={getDisplayImageUrl(product.primary_image || product.image_url)}
-                        style={{ height: '200px', objectFit: 'cover', width: '100%' }}
+                        src={product.image_url}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
-                          const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
-                          handleImageError(target.src, fallbackUrl, target);
+                          target.src = 'https://via.placeholder.com/300x200?text=Product+Image';
                         }}
                       />
-                    )}
-
-                    {/* Overlay for out of stock */}
-                    {product.stock_quantity === 0 && (
+                    ) : (
                       <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        height: '100%',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        borderRadius: 8
+                        backgroundColor: '#f0f0f0',
+                        color: '#999'
                       }}>
-                        <Text style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
-                          OUT OF STOCK
-                        </Text>
-                      </div>
-                    )}
-
-                    {/* Multiple images indicator */}
-                    {product.images && product.images.length > 1 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        backgroundColor: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        padding: '2px 6px',
-                        borderRadius: '12px',
-                        fontSize: '12px'
-                      }}>
-                        {product.images.length} photos
+                        No Image
                       </div>
                     )}
                   </div>

@@ -17,15 +17,7 @@ interface Product {
   description: string;
   category: string;
   price: number;
-  s                  <img
-                    src={getImageUrl(selectedProduct.image_url)}
-                    alt={selectedProduct.name}
-                    style={{ width: '100%', borderRadius: 8, maxHeight: '400px', objectFit: 'cover' }}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop';
-                    }}
-                  />tity: number;
+  stock_quantity: number;
   minimum_stock: number;
   unit: string;
   sku: string;
@@ -61,6 +53,7 @@ export const ProductCatalog: React.FC = () => {
   const [showOutOfStock, setShowOutOfStock] = useState(true);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('ASC');
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchProducts();
@@ -206,9 +199,16 @@ export const ProductCatalog: React.FC = () => {
     return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const handleImageError = (imageUrl: string) => {
+    setFailedImages(prev => new Set(prev).add(imageUrl));
+  };
+
   const getImageUrl = (imageUrl: string | null | undefined) => {
-    if (!imageUrl) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop';
+    // Always return a reliable fallback image to prevent infinite loops
+    const fallbackImage = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
+    
+    if (!imageUrl || imageUrl.trim() === '') {
+      return fallbackImage;
     }
     
     // If it's already a full URL (starts with http), return as is
@@ -217,7 +217,24 @@ export const ProductCatalog: React.FC = () => {
     }
     
     // If it's a relative path, construct full URL with backend domain
-    return `http://localhost:5000${imageUrl}`;
+    if (imageUrl.startsWith('/')) {
+      return `http://localhost:5000${imageUrl}`;
+    }
+    
+    // If it doesn't start with /, add it
+    return `http://localhost:5000/${imageUrl}`;
+  };
+
+  const getDisplayImageUrl = (imageUrl: string | null | undefined) => {
+    const fallbackImage = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
+    const processedUrl = getImageUrl(imageUrl);
+    
+    // If this image URL has failed before, use fallback immediately
+    if (failedImages.has(processedUrl)) {
+      return fallbackImage;
+    }
+    
+    return processedUrl;
   };
 
   return (
@@ -352,11 +369,18 @@ export const ProductCatalog: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <img
                           alt={product.name}
-                          src={getImageUrl(product.image_url)}
+                          src={getDisplayImageUrl(product.image_url)}
                           style={{ height: 200, objectFit: 'cover', width: '100%' }}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop';
+                            const originalSrc = target.src;
+                            const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop&auto=format';
+                            
+                            // Only change if not already the fallback to prevent infinite loops
+                            if (originalSrc !== fallbackUrl) {
+                              handleImageError(originalSrc);
+                              target.src = fallbackUrl;
+                            }
                           }}
                           loading="lazy"
                         />
@@ -532,12 +556,19 @@ export const ProductCatalog: React.FC = () => {
               <Col xs={24} md={12}>
                 <div style={{ position: 'relative' }}>
                   <img
-                    src={selectedProduct.image_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop'}
+                    src={getDisplayImageUrl(selectedProduct.image_url)}
                     alt={selectedProduct.name}
                     style={{ width: '100%', borderRadius: 8, maxHeight: '400px', objectFit: 'cover' }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop';
+                      const originalSrc = target.src;
+                      const fallbackUrl = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=400&fit=crop&auto=format';
+                      
+                      // Only change if not already the fallback to prevent infinite loops
+                      if (originalSrc !== fallbackUrl) {
+                        handleImageError(originalSrc);
+                        target.src = fallbackUrl;
+                      }
                     }}
                   />
                   {selectedProduct.stock_quantity === 0 && (
