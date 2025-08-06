@@ -230,11 +230,16 @@ export const EnhancedInventoryManagement: React.FC = () => {
 
       const formData = new FormData();
       
-      // Append form values
+      // Append form values with proper boolean handling
       Object.keys(values).forEach(key => {
         const value = (values as any)[key];
         if (value !== undefined && value !== null) {
-          formData.append(key, value);
+          // Convert boolean values to string for FormData
+          if (typeof value === 'boolean') {
+            formData.append(key, value.toString());
+          } else {
+            formData.append(key, value);
+          }
         }
       });
 
@@ -293,11 +298,16 @@ export const EnhancedInventoryManagement: React.FC = () => {
 
       const formData = new FormData();
       
-      // Append form values
+      // Append form values with proper boolean handling
       Object.keys(values).forEach(key => {
         const value = (values as any)[key];
         if (value !== undefined && value !== null) {
-          formData.append(key, value);
+          // Convert boolean values to string for FormData
+          if (typeof value === 'boolean') {
+            formData.append(key, value.toString());
+          } else {
+            formData.append(key, value);
+          }
         }
       });
 

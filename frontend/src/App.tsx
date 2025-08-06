@@ -13,8 +13,8 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 // Customer Pages
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
-import { CustomerProducts } from './pages/customer/CustomerProducts';
-import { MyOrders } from './pages/customer/MyOrders';
+import { CustomerProducts } from './pages/customer/CustomerProducts_clean';
+import CustomerOrders from './pages/customer/CustomerOrders';
 import { Cart } from './pages/customer/Cart';
 import { CustomerProfile } from './pages/customer/CustomerProfile';
 // Supplier Pages
@@ -22,6 +22,7 @@ import { SupplierDashboard } from './pages/supplier/SupplierDashboard';
 import { MaterialRequests } from './pages/supplier/MaterialRequests';
 import { ForecastViewer } from './pages/supplier/ForecastViewer';
 import { DeliveryHistory } from './pages/supplier/DeliveryHistory';
+import { DeliveryStatusUpdate } from './pages/supplier/DeliveryStatusUpdate';
 import { SupplierProfile } from './pages/supplier/SupplierProfile';
 // Admin Pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -83,7 +84,7 @@ export function App() {
                   </ProtectedRoute>}>
                 <Route index element={<CustomerDashboard />} />
                 <Route path="products" element={<CustomerProducts />} />
-                <Route path="orders" element={<MyOrders />} />
+                <Route path="orders" element={<CustomerOrders />} />
                 <Route path="cart" element={<Cart />} />
                 <Route path="profile" element={<CustomerProfile />} />
                 <Route path="notifications" element={<CustomerNotifications />} />
@@ -95,6 +96,7 @@ export function App() {
                   </ProtectedRoute>}>
                 <Route index element={<SupplierDashboard />} />
                 <Route path="requests" element={<MaterialRequests />} />
+                <Route path="deliveries/:requestId" element={<DeliveryStatusUpdate />} />
                 <Route path="forecasts" element={<ForecastViewer />} />
                 <Route path="history" element={<DeliveryHistory />} />
                 <Route path="profile" element={<SupplierProfile />} />

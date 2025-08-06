@@ -102,7 +102,7 @@ const getMaterialRequests = async (req, res) => {
 const updateRequestStatus = async (req, res) => {
   try {
     const { requestId } = req.params;
-    const { status, supplier_response } = req.body;
+    const { status, supplier_response, estimated_delivery_date } = req.body;
     const supplierId = req.user.id;
 
     // Verify request belongs to supplier
@@ -125,6 +125,11 @@ const updateRequestStatus = async (req, res) => {
     if (supplier_response) {
       query += ', supplier_response = ?';
       updateData.push(supplier_response);
+    }
+
+    if (estimated_delivery_date) {
+      query += ', estimated_delivery_date = ?';
+      updateData.push(estimated_delivery_date);
     }
 
     if (status === 'completed') {

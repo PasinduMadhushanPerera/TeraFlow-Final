@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Orders - Approved Status</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { color: #8B4513; margin-bottom: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #f6ffed; border-color: #b7eb8f; }
+        .error { background: #fff2f0; border-color: #ffccc7; }
+        .info { background: #f0f9ff; border-color: #91d5ff; }
+        .status-approved { color: #52c41a; font-weight: bold; }
+        .status-pending { color: #faad14; }
+        .status-processing { color: #1890ff; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+        th { background: #fafafa; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+        .btn-primary { background: #1890ff; color: white; border: none; border-radius: 4px; }
+        .btn-success { background: #52c41a; color: white; border: none; border-radius: 4px; }
+        .log { background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header">🧪 Admin Orders - Approved Status Test</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Test Checklist</h3>
+            <p>This test verifies that the admin orders page correctly:</p>
+            <ul>
+                <li>✅ Displays orders with approved status</li>
+                <li>✅ Allows admin to change status to approved</li>
+                <li>✅ Shows approved status with correct styling (lime color)</li>
+                <li>✅ Persists approved status until manually changed</li>
+                <li>✅ Updates status without page refresh conflicts</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔑 Step 1: Admin Authentication</h3>
+            <button id="loginBtn" class="btn-primary">Login as Admin</button>
+            <div id="loginResult" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Step 2: Fetch Orders</h3>
+            <button id="fetchOrdersBtn" class="btn-primary" disabled>Fetch Orders</button>
+            <div id="ordersResult" class="log"></div>
+            <div id="ordersTable"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ Step 3: Test Approved Status</h3>
+            <button id="testApprovedBtn" class="btn-success" disabled>Set First Order to Approved</button>
+            <div id="approvedResult" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Step 4: Verify Persistence</h3>
+            <button id="verifyBtn" class="btn-primary" disabled>Verify Approved Status Persists</button>
+            <div id="verifyResult" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Frontend Integration Test</h3>
+            <p>After completing the API tests above, test the frontend:</p>
+            <ol>
+                <li>Open <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                <li>Login as admin (admin@terraflow.com / admin123)</li>
+                <li>Navigate to Orders Management</li>
+                <li>Find an order and change its status to "Approved"</li>
+                <li>Verify the status shows as "APPROVED" with lime color</li>
+                <li>Refresh the page and confirm the status persists</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let adminToken = null;
+        let orders = [];
+
+        // Helper function to log results
+        function log(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML += `[${timestamp}] ${message}\n`;
+            element.scrollTop = element.scrollHeight;
+            
+            if (isError) {
+                element.parentElement.className = element.parentElement.className.replace('success', '').replace('info', '') + ' error';
+            } else {
+                element.parentElement.className = element.parentElement.className.replace('error', '').replace('info', '') + ' success';
+            }
+        }
+
+        // Step 1: Admin Login
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            try {
+                log('loginResult', '🔄 Attempting admin login...');
+                
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@terraflow.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    adminToken = data.token;
+                    log('loginResult', `✅ Login successful! Admin: ${data.user.full_name}`);
+                    document.getElementById('fetchOrdersBtn').disabled = false;
+                } else {
+                    log('loginResult', `❌ Login failed: ${data.message}`, true);
+                }
+            } catch (error) {
+                log('loginResult', `❌ Login error: ${error.message}`, true);
+            }
+        });
+
+        // Step 2: Fetch Orders
+        document.getElementById('fetchOrdersBtn').addEventListener('click', async () => {
+            try {
+                log('ordersResult', '🔄 Fetching orders...');
+                
+                const response = await fetch('http://localhost:5000/api/admin/orders', {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    orders = data.data;
+                    log('ordersResult', `✅ Found ${orders.length} orders`);
+                    
+                    // Display orders table
+                    displayOrdersTable();
+                    
+                    if (orders.length > 0) {
+                        document.getElementById('testApprovedBtn').disabled = false;
+                    }
+                } else {
+                    log('ordersResult', `❌ Failed to fetch orders: ${data.message}`, true);
+                }
+            } catch (error) {
+                log('ordersResult', `❌ Fetch error: ${error.message}`, true);
+            }
+        });
+
+        // Display orders in a table
+        function displayOrdersTable() {
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th>Total Amount</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orders.slice(0, 5).map(order => `
+                            <tr>
+                                <td>#${order.id}</td>
+                                <td>${order.customer_name || 'N/A'}</td>
+                                <td class="status-${order.status}">${order.status ? order.status.toUpperCase() : 'UNKNOWN'}</td>
+                                <td>Rs. ${order.total_amount}</td>
+                                <td>${new Date(order.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('ordersTable').innerHTML = tableHTML;
+        }
+
+        // Step 3: Test Approved Status
+        document.getElementById('testApprovedBtn').addEventListener('click', async () => {
+            if (orders.length === 0) return;
+            
+            try {
+                const testOrder = orders[0];
+                log('approvedResult', `🔄 Setting order #${testOrder.id} to approved status...`);
+                log('approvedResult', `   Current status: ${testOrder.status || 'UNKNOWN'}`);
+                
+                const response = await fetch(`http://localhost:5000/api/admin/orders/${testOrder.id}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        notes: 'Frontend test - setting to approved'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('approvedResult', `✅ Order status updated to APPROVED successfully!`);
+                    log('approvedResult', `   Response: ${data.message}`);
+                    document.getElementById('verifyBtn').disabled = false;
+                } else {
+                    log('approvedResult', `❌ Failed to update status: ${data.message}`, true);
+                }
+            } catch (error) {
+                log('approvedResult', `❌ Update error: ${error.message}`, true);
+            }
+        });
+
+        // Step 4: Verify Persistence
+        document.getElementById('verifyBtn').addEventListener('click', async () => {
+            try {
+                log('verifyResult', '🔄 Verifying approved status persistence...');
+                
+                const response = await fetch('http://localhost:5000/api/admin/orders', {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const testOrder = data.data.find(order => order.id === orders[0].id);
+                    
+                    if (testOrder && testOrder.status === 'approved') {
+                        log('verifyResult', `✅ SUCCESS! Order #${testOrder.id} shows status: APPROVED`);
+                        log('verifyResult', `   ✅ Status persisted correctly in database`);
+                        log('verifyResult', `   ✅ Updated at: ${new Date(testOrder.updated_at).toLocaleString()}`);
+                        log('verifyResult', `\n🎉 ALL TESTS PASSED! Approved status is working correctly.`);
+                    } else {
+                        log('verifyResult', `❌ FAILED! Order status is: ${testOrder ? testOrder.status : 'NOT FOUND'}`, true);
+                    }
+                } else {
+                    log('verifyResult', `❌ Failed to verify: ${data.message}`, true);
+                }
+            } catch (error) {
+                log('verifyResult', `❌ Verify error: ${error.message}`, true);
+            }
+        });
+    </script>
+</body>
+</html>

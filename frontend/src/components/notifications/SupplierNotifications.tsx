@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Card, 
   List, 
@@ -47,6 +48,7 @@ interface NotificationStats {
 
 export const SupplierNotifications: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [stats, setStats] = useState<NotificationStats>({ total: 0, unread: 0, last_24h: 0 });
   const [loading, setLoading] = useState(true);
@@ -352,8 +354,7 @@ export const SupplierNotifications: React.FC = () => {
                             size="small" 
                             className="p-0 h-auto text-green-600"
                             onClick={() => {
-                              // Navigate to delivery management
-                              window.location.href = `/supplier/deliveries/${notification.related_id}`;
+                              navigate(`/supplier/deliveries/${notification.related_id}`);
                             }}
                           >
                             Update Delivery Status →

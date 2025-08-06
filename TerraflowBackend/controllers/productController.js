@@ -262,8 +262,13 @@ const createProduct = async (req, res) => {
       dimensions,
       weight_kg,
       production_time_days,
-      is_custom_order = false
+      is_custom_order = false,
+      is_active = true
     } = req.body;
+
+    // Convert string booleans to actual booleans
+    const isCustomOrder = is_custom_order === 'true' || is_custom_order === true;
+    const isActive = is_active === 'true' || is_active === true;
 
     // Check if SKU already exists
     if (sku) {
@@ -284,12 +289,12 @@ const createProduct = async (req, res) => {
       INSERT INTO products (
         name, description, category, price, stock_quantity, minimum_stock,
         unit, sku, image_url, firing_temperature, clay_type, glaze_type,
-        dimensions, weight_kg, production_time_days, is_custom_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        dimensions, weight_kg, production_time_days, is_custom_order, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       name, description, category, price, stock_quantity, minimum_stock,
       unit, sku, image_url, firing_temperature, clay_type, glaze_type,
-      dimensions, weight_kg, production_time_days, is_custom_order
+      dimensions, weight_kg, production_time_days, isCustomOrder, isActive
     ]);
 
     // Log inventory movement
@@ -348,14 +353,21 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    // Build update query dynamically
+    // Build update query dynamically with boolean conversion
     const updateFields = [];
     const updateValues = [];
 
     Object.keys(updateData).forEach(key => {
       if (updateData[key] !== undefined && key !== 'id') {
+        let value = updateData[key];
+        
+        // Convert string booleans to actual booleans for specific fields
+        if (key === 'is_active' || key === 'is_custom_order' || key === 'is_featured') {
+          value = value === 'true' || value === true;
+        }
+        
         updateFields.push(`${key} = ?`);
-        updateValues.push(updateData[key]);
+        updateValues.push(value);
       }
     });
 

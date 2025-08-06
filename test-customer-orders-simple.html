@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Orders Test</title>
+</head>
+<body>
+    <h1>Customer Orders Component Test</h1>
+    <p>Navigate to: <a href="http://localhost:3000/customer/orders" target="_blank">http://localhost:3000/customer/orders</a></p>
+    
+    <h2>Debug Checklist:</h2>
+    <ul>
+        <li>✅ Backend server running on localhost:5000</li>
+        <li>✅ Fixed duplicate export statements</li>
+        <li>⚠️ Check browser console for errors</li>
+        <li>⚠️ Verify user is logged in as customer</li>
+        <li>⚠️ Check if component renders properly</li>
+    </ul>
+
+    <h2>Common Issues:</h2>
+    <ul>
+        <li><strong>Authentication:</strong> Make sure you're logged in as a customer</li>
+        <li><strong>Token:</strong> Check if terraflow_token exists in localStorage</li>
+        <li><strong>Route Protection:</strong> Verify ProtectedRoute is allowing access</li>
+        <li><strong>Component Loading:</strong> Check for JavaScript errors in console</li>
+    </ul>
+
+    <h2>Manual Testing Steps:</h2>
+    <ol>
+        <li>Open browser dev tools (F12)</li>
+        <li>Go to Console tab</li>
+        <li>Navigate to the customer orders page</li>
+        <li>Check for any red error messages</li>
+        <li>If page is blank, check if API calls are being made in Network tab</li>
+    </ol>
+
+    <script>
+        // Simple JavaScript to check localStorage
+        console.log('=== Customer Orders Debug Info ===');
+        console.log('Current URL:', window.location.href);
+        console.log('Local Storage Token:', localStorage.getItem('terraflow_token') ? 'Present' : 'Missing');
+        console.log('User Role:', localStorage.getItem('terraflow_role') || 'Not set');
+        console.log('===================================');
+        
+        // Test API endpoint accessibility
+        if (localStorage.getItem('terraflow_token')) {
+            fetch('http://localhost:5000/api/customer/orders', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('terraflow_token')}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('API Test Result:', data);
+                if (data.success) {
+                    console.log('✅ API is working, found', data.data.length, 'orders');
+                } else {
+                    console.log('❌ API returned error:', data.message);
+                }
+            })
+            .catch(error => {
+                console.log('❌ API request failed:', error);
+            });
+        } else {
+            console.log('❌ No authentication token found');
+        }
+    </script>
+</body>
+</html>

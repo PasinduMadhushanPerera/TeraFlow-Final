@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TerraFlow Login Diagnostic Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { color: #8B4513; margin-bottom: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #f6ffed; border-color: #b7eb8f; }
+        .error { background: #fff2f0; border-color: #ffccc7; }
+        .info { background: #f0f9ff; border-color: #91d5ff; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+        .btn-primary { background: #1890ff; color: white; border: none; border-radius: 4px; }
+        .btn-test { background: #52c41a; color: white; border: none; border-radius: 4px; }
+        .log { background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; max-height: 300px; overflow-y: auto; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+        .form-group { margin: 10px 0; }
+        label { display: inline-block; width: 100px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header">🔍 TerraFlow Login Diagnostic Test</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Current Server Status</h3>
+            <p><strong>Backend:</strong> http://localhost:5000</p>
+            <p><strong>Frontend:</strong> http://localhost:3001</p>
+            <button id="testServersBtn" class="btn-test">Test Server Connectivity</button>
+            <div id="serverResult" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔑 Login API Test</h3>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="loginEmail" value="admin@terraflow.com" />
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="loginPassword" value="admin123" />
+            </div>
+            <button id="testLoginBtn" class="btn-primary">Test Login API</button>
+            <button id="testCustomerLoginBtn" class="btn-primary">Test Customer Login</button>
+            <div id="loginResult" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🌐 CORS & Network Test</h3>
+            <button id="testCorsBtn" class="btn-test">Test CORS Headers</button>
+            <div id="corsResult" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>💾 Browser Storage Test</h3>
+            <button id="testStorageBtn" class="btn-test">Test Local Storage</button>
+            <button id="clearStorageBtn" class="btn-test">Clear Storage</button>
+            <div id="storageResult" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Frontend Navigation Test</h3>
+            <p>Test the actual frontend login page:</p>
+            <a href="http://localhost:3001" target="_blank" class="btn-primary" style="text-decoration: none; display: inline-block;">Open Frontend App</a>
+            <div id="navigationResult" class="log">
+                Click the link above to test the frontend login directly.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to log results
+        function log(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML += `[${timestamp}] ${message}\n`;
+            element.scrollTop = element.scrollHeight;
+            
+            if (isError) {
+                element.parentElement.className = element.parentElement.className.replace('success', '').replace('info', '') + ' error';
+            } else {
+                element.parentElement.className = element.parentElement.className.replace('error', '').replace('info', '') + ' success';
+            }
+        }
+
+        // Test server connectivity
+        document.getElementById('testServersBtn').addEventListener('click', async () => {
+            const serverResult = document.getElementById('serverResult');
+            serverResult.innerHTML = '';
+            
+            try {
+                log('serverResult', '🔄 Testing backend connectivity...');
+                
+                const backendResponse = await fetch('http://localhost:5000/health');
+                if (backendResponse.ok) {
+                    const data = await backendResponse.json();
+                    log('serverResult', `✅ Backend: ${backendResponse.status} - ${data.status}`);
+                } else {
+                    log('serverResult', `❌ Backend: ${backendResponse.status} ${backendResponse.statusText}`, true);
+                }
+                
+                log('serverResult', '🔄 Testing frontend connectivity...');
+                const frontendResponse = await fetch('http://localhost:3001');
+                if (frontendResponse.ok) {
+                    log('serverResult', `✅ Frontend: ${frontendResponse.status} - Server accessible`);
+                } else {
+                    log('serverResult', `❌ Frontend: ${frontendResponse.status} ${frontendResponse.statusText}`, true);
+                }
+                
+            } catch (error) {
+                log('serverResult', `❌ Connection error: ${error.message}`, true);
+            }
+        });
+
+        // Test login API
+        document.getElementById('testLoginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginResult = document.getElementById('loginResult');
+            loginResult.innerHTML = '';
+            
+            try {
+                log('loginResult', `🔄 Testing login for: ${email}`);
+                
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                log('loginResult', `📡 Response status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('loginResult', `✅ Login successful!`);
+                    log('loginResult', `👤 User: ${data.user.full_name} (${data.user.role})`);
+                    log('loginResult', `🔑 Token: ${data.token.substring(0, 20)}...`);
+                } else {
+                    log('loginResult', `❌ Login failed: ${data.message}`, true);
+                }
+                
+            } catch (error) {
+                log('loginResult', `❌ Login error: ${error.message}`, true);
+            }
+        });
+
+        // Test customer login
+        document.getElementById('testCustomerLoginBtn').addEventListener('click', async () => {
+            const loginResult = document.getElementById('loginResult');
+            
+            try {
+                log('loginResult', `🔄 Testing customer login...`);
+                
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: 'customer@test.com', 
+                        password: 'password123' 
+                    }),
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('loginResult', `✅ Customer login successful!`);
+                    log('loginResult', `👤 Customer: ${data.user.full_name} (${data.user.role})`);
+                } else {
+                    log('loginResult', `❌ Customer login failed: ${data.message}`, true);
+                }
+                
+            } catch (error) {
+                log('loginResult', `❌ Customer login error: ${error.message}`, true);
+            }
+        });
+
+        // Test CORS
+        document.getElementById('testCorsBtn').addEventListener('click', async () => {
+            const corsResult = document.getElementById('corsResult');
+            corsResult.innerHTML = '';
+            
+            try {
+                log('corsResult', '🔄 Testing CORS headers...');
+                
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'OPTIONS',
+                });
+                
+                log('corsResult', `📡 OPTIONS response: ${response.status}`);
+                log('corsResult', `🔍 CORS headers:`);
+                
+                response.headers.forEach((value, key) => {
+                    if (key.toLowerCase().includes('cors') || key.toLowerCase().includes('access-control')) {
+                        log('corsResult', `   ${key}: ${value}`);
+                    }
+                });
+                
+            } catch (error) {
+                log('corsResult', `❌ CORS test error: ${error.message}`, true);
+            }
+        });
+
+        // Test browser storage
+        document.getElementById('testStorageBtn').addEventListener('click', () => {
+            const storageResult = document.getElementById('storageResult');
+            storageResult.innerHTML = '';
+            
+            try {
+                log('storageResult', '🔄 Testing browser storage...');
+                
+                // Test localStorage
+                const testData = { test: 'terraflow', timestamp: Date.now() };
+                localStorage.setItem('terraflow_test', JSON.stringify(testData));
+                const retrieved = localStorage.getItem('terraflow_test');
+                
+                if (retrieved && JSON.parse(retrieved).test === 'terraflow') {
+                    log('storageResult', '✅ LocalStorage: Working');
+                } else {
+                    log('storageResult', '❌ LocalStorage: Failed', true);
+                }
+                
+                // Check existing tokens
+                const existingUser = localStorage.getItem('terraflow_user');
+                const existingToken = localStorage.getItem('terraflow_token');
+                
+                log('storageResult', `📋 Existing user data: ${existingUser ? 'Found' : 'None'}`);
+                log('storageResult', `🔑 Existing token: ${existingToken ? 'Found' : 'None'}`);
+                
+                if (existingUser) {
+                    try {
+                        const userData = JSON.parse(existingUser);
+                        log('storageResult', `👤 Stored user: ${userData.fullName} (${userData.role})`);
+                    } catch (e) {
+                        log('storageResult', '❌ Invalid user data format', true);
+                    }
+                }
+                
+            } catch (error) {
+                log('storageResult', `❌ Storage test error: ${error.message}`, true);
+            }
+        });
+
+        // Clear storage
+        document.getElementById('clearStorageBtn').addEventListener('click', () => {
+            const storageResult = document.getElementById('storageResult');
+            
+            localStorage.removeItem('terraflow_user');
+            localStorage.removeItem('terraflow_token');
+            localStorage.removeItem('terraflow_remember_login');
+            localStorage.removeItem('terraflow_test');
+            
+            log('storageResult', '🗑️ All TerraFlow storage cleared');
+        });
+
+        // Auto-run server test on load
+        window.addEventListener('load', () => {
+            document.getElementById('testServersBtn').click();
+        });
+    </script>
+</body>
+</html>
