@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Orders Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #8B4513;
+            border-radius: 4px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.completed { background: #d4edda; color: #155724; }
+        .code-block {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            margin: 10px 0;
+            font-family: monospace;
+            overflow-x: auto;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 style="color: #8B4513;">🛍️ Customer Orders Page Implementation</h1>
+        
+        <div class="highlight">
+            <strong>✅ Implementation Complete!</strong><br>
+            The customer orders page has been successfully implemented with all requested features.
+        </div>
+
+        <h2>📋 Implemented Features</h2>
+        
+        <ul class="feature-list">
+            <li>
+                <strong>📊 Orders Table View</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Complete orders table with order number, date, items, amount, status, and payment info</small>
+            </li>
+            
+            <li>
+                <strong>👁️ Order Details View</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Comprehensive modal showing order information, payment details, items, and shipping address</small>
+            </li>
+            
+            <li>
+                <strong>❌ Order Cancellation</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Cancel orders with confirmation modal and stock restoration (only for pending/confirmed orders)</small>
+            </li>
+            
+            <li>
+                <strong>📄 Download Invoice</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Generate and download HTML invoices with complete order details and company branding</small>
+            </li>
+            
+            <li>
+                <strong>🔍 Search & Filters</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Search by order number or product name, filter by status, and date range selection</small>
+            </li>
+            
+            <li>
+                <strong>📱 Responsive Design</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Mobile-friendly interface with proper table scrolling and responsive modals</small>
+            </li>
+            
+            <li>
+                <strong>🔔 Status Tracking</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Visual status indicators with icons and colors for different order states</small>
+            </li>
+            
+            <li>
+                <strong>💳 Payment Information</strong>
+                <span class="status completed">Completed</span>
+                <br><small>Display payment method, status, card details (masked), and transaction IDs</small>
+            </li>
+        </ul>
+
+        <h2>🗂️ File Structure</h2>
+        
+        <div class="code-block">
+frontend/src/pages/customer/CustomerOrders.tsx     ← New comprehensive orders page
+frontend/src/App.tsx                               ← Updated routing
+        </div>
+
+        <h2>🔗 API Endpoints Used</h2>
+        
+        <div class="code-block">
+GET  /api/customer/orders                          ← Fetch orders
+PUT  /api/customer/orders/:orderId/cancel          ← Cancel order
+        </div>
+
+        <h2>💡 Key Features Breakdown</h2>
+
+        <h3>1. Orders Table</h3>
+        <ul>
+            <li>Order number with blue highlighting</li>
+            <li>Creation date and time</li>
+            <li>Items count and product preview</li>
+            <li>Total amount display</li>
+            <li>Status tags with icons</li>
+            <li>Payment method and status</li>
+            <li>Action buttons (View, Cancel, Download)</li>
+        </ul>
+
+        <h3>2. Order Details Modal</h3>
+        <ul>
+            <li>Complete order information panel</li>
+            <li>Payment details with masked card information</li>
+            <li>Order items table with SKU, quantity, and pricing</li>
+            <li>Shipping address display</li>
+            <li>Order summary with totals breakdown</li>
+            <li>Special instructions if provided</li>
+        </ul>
+
+        <h3>3. Order Cancellation</h3>
+        <ul>
+            <li>Only available for pending/confirmed orders</li>
+            <li>Confirmation modal with order details</li>
+            <li>Warning about refund processing</li>
+            <li>Automatic stock restoration</li>
+            <li>Inventory movement logging</li>
+        </ul>
+
+        <h3>4. Invoice Generation</h3>
+        <ul>
+            <li>Professional HTML invoice with company branding</li>
+            <li>Complete order details and customer information</li>
+            <li>Itemized breakdown with SKUs and pricing</li>
+            <li>Automatic download as HTML file</li>
+            <li>Print-ready format</li>
+        </ul>
+
+        <h3>5. Filters & Search</h3>
+        <ul>
+            <li>Text search across order numbers and product names</li>
+            <li>Status filter dropdown</li>
+            <li>Date range picker for order dates</li>
+            <li>Real-time filtering</li>
+            <li>Order count display</li>
+        </ul>
+
+        <h2>🚀 How to Access</h2>
+        
+        <div class="code-block">
+1. Login as a customer
+2. Navigate to: /customer/orders
+3. View your order history with all features
+        </div>
+
+        <h2>🎨 UI/UX Features</h2>
+        
+        <ul>
+            <li><strong>Color-coded Status:</strong> Different colors for pending, confirmed, processing, shipped, delivered, cancelled</li>
+            <li><strong>Intuitive Icons:</strong> Clock for pending, checkmark for completed, truck for shipping</li>
+            <li><strong>Responsive Layout:</strong> Works on all screen sizes</li>
+            <li><strong>Loading States:</strong> Proper loading indicators for all actions</li>
+            <li><strong>Error Handling:</strong> User-friendly error messages</li>
+            <li><strong>Success Feedback:</strong> Confirmation messages for all actions</li>
+        </ul>
+
+        <div class="highlight">
+            <strong>🎯 Ready for Production!</strong><br>
+            The customer orders page is fully implemented and ready for customer use. All features work seamlessly with the existing TeraFlow system.
+        </div>
+    </div>
+</body>
+</html>

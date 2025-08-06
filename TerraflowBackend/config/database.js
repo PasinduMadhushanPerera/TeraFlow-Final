@@ -126,7 +126,7 @@ const initializeDatabase = async () => {
         id INT PRIMARY KEY AUTO_INCREMENT,
         customer_id INT NOT NULL,
         order_number VARCHAR(50) UNIQUE NOT NULL,
-        status ENUM('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+        status ENUM('pending', 'confirmed', 'approved', 'processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
         total_amount DECIMAL(10,2) NOT NULL,
         shipping_address TEXT NOT NULL,
         payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',

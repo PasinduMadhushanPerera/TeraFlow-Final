@@ -13,8 +13,8 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 // Customer Pages
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
-import { CustomerProducts } from './pages/customer/CustomerProducts';
-import { MyOrders } from './pages/customer/MyOrders';
+import { CustomerProducts } from './pages/customer/CustomerProducts_clean';
+import CustomerOrders from './pages/customer/CustomerOrders';
 import { Cart } from './pages/customer/Cart';
 import { CustomerProfile } from './pages/customer/CustomerProfile';
 // Supplier Pages
@@ -84,7 +84,7 @@ export function App() {
                   </ProtectedRoute>}>
                 <Route index element={<CustomerDashboard />} />
                 <Route path="products" element={<CustomerProducts />} />
-                <Route path="orders" element={<MyOrders />} />
+                <Route path="orders" element={<CustomerOrders />} />
                 <Route path="cart" element={<Cart />} />
                 <Route path="profile" element={<CustomerProfile />} />
                 <Route path="notifications" element={<CustomerNotifications />} />

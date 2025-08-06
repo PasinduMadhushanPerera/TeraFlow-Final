@@ -66,6 +66,12 @@ export const OrderManagement: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+    
+    // Disable auto-refresh to prevent status conflicts after admin updates
+    // Status should persist until admin explicitly changes it
+    // Manual refresh button available for getting latest data
+    
+    return () => {}; // No auto-refresh interval
   }, []);
 
   useEffect(() => {
@@ -83,10 +89,11 @@ export const OrderManagement: React.FC = () => {
         return;
       }
       
-      const response = await fetch('http://localhost:5000/api/admin/orders', {
+      const response = await fetch(`http://localhost:5000/api/admin/orders?t=${Date.now()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         }
       });
       const data = await response.json();
@@ -153,8 +160,21 @@ export const OrderManagement: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        message.success('Order status updated successfully');
-        fetchOrders();
+        message.success(`Order status updated to ${newStatus.toUpperCase()} successfully`);
+        
+        // Update local state immediately for better UX and ensure persistence
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.id === orderId ? { 
+              ...order, 
+              status: newStatus as any,
+              updated_at: new Date().toISOString() // Update timestamp
+            } : order
+          )
+        );
+        
+        // No need to fetch again - local state should persist the approved status
+        // Only manual refresh should update from server
       } else {
         message.error(data.message || 'Failed to update order status');
       }
@@ -205,7 +225,7 @@ export const OrderManagement: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'orange';
-      case 'approved': return 'blue';
+      case 'approved': return 'lime';
       case 'processing': return 'cyan';
       case 'shipped': return 'purple';
       case 'delivered': return 'green';
@@ -217,6 +237,7 @@ export const OrderManagement: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <ClockCircleOutlined />;
+      case 'approved': return <CheckCircleOutlined />;
       case 'delivered': return <CheckCircleOutlined />;
       default: return <ShoppingCartOutlined />;
     }

@@ -260,7 +260,7 @@ const updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
     const { status, notes } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+    const validStatuses = ['pending', 'confirmed', 'approved', 'processing', 'shipped', 'delivered', 'cancelled'];
     
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
@@ -291,6 +291,7 @@ const updateOrderStatus = async (req, res) => {
     // Send notification to customer using our notification trigger
     const statusMessages = {
       confirmed: 'Your order has been confirmed and is being processed',
+      approved: 'Your order has been approved and will be processed soon',
       processing: 'Your order is currently being processed',
       shipped: 'Your order has been shipped and is on the way',
       delivered: 'Your order has been delivered successfully',

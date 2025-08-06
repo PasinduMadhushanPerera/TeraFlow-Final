@@ -63,18 +63,23 @@ const generateInvoice = async (req, res) => {
       // Generate invoice number
       invoiceNumber = `INV-${Date.now()}-${order_id}`;
       
-      // Calculate amounts
-      const subtotal = order.total_amount;
-      const taxRate = 0.08; // 8% tax
-      const taxAmount = subtotal * taxRate;
-      const totalAmount = subtotal + taxAmount;
+      // Calculate amounts properly
+      const orderItemsSubtotal = orderItems.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
+      const deliveryFee = parseFloat(order.delivery_fee || 0);
+      const existingTaxAmount = parseFloat(order.tax_amount || 0);
+      
+      // If no existing tax, calculate it (5% of subtotal)
+      const taxAmount = existingTaxAmount > 0 ? existingTaxAmount : orderItemsSubtotal * 0.05;
+      
+      // Total should be subtotal + delivery + tax
+      const totalAmount = orderItemsSubtotal + deliveryFee + taxAmount;
       
       // Create invoice record
       const [invoiceResult] = await pool.execute(`
         INSERT INTO invoices 
         (order_id, invoice_number, amount, tax_amount, total_amount, due_date, status)
         VALUES (?, ?, ?, ?, ?, DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY), 'draft')
-      `, [order_id, invoiceNumber, subtotal, taxAmount, totalAmount]);
+      `, [order_id, invoiceNumber, orderItemsSubtotal, taxAmount, totalAmount]);
       
       invoiceId = invoiceResult.insertId;
     }
@@ -116,6 +121,8 @@ const generateInvoicePDF = async (req, res) => {
         i.*,
         o.order_number,
         o.shipping_address,
+        o.delivery_fee,
+        o.tax_amount as order_tax_amount,
         o.created_at as order_date,
         u.full_name as customer_name,
         u.email as customer_email,
@@ -209,8 +216,17 @@ const generateInvoicePDF = async (req, res) => {
     doc.moveTo(350, totalsY).lineTo(550, totalsY).stroke();
     
     doc.text(`Subtotal: Rs. ${invoice.amount}`, 350, totalsY + 10);
-    doc.text(`Tax: Rs. ${invoice.tax_amount}`, 350, totalsY + 30);
-    doc.fontSize(12).text(`Total: Rs. ${invoice.total_amount}`, 350, totalsY + 50);
+    
+    // Add delivery fee if available
+    const deliveryFee = parseFloat(invoice.delivery_fee || 0);
+    if (deliveryFee > 0) {
+      doc.text(`Delivery Fee: Rs. ${deliveryFee.toFixed(2)}`, 350, totalsY + 30);
+      doc.text(`Tax: Rs. ${invoice.tax_amount}`, 350, totalsY + 50);
+      doc.fontSize(12).text(`Total: Rs. ${invoice.total_amount}`, 350, totalsY + 70);
+    } else {
+      doc.text(`Tax: Rs. ${invoice.tax_amount}`, 350, totalsY + 30);
+      doc.fontSize(12).text(`Total: Rs. ${invoice.total_amount}`, 350, totalsY + 50);
+    }
 
     // Footer
     doc.fontSize(8).text('Thank you for your business!', 50, doc.page.height - 100, { align: 'center' });

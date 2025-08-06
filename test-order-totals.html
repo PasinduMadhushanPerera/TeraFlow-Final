@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Order Total Calculation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .order-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .breakdown {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 Order Total Calculation Test</h1>
+        <p>Testing the updated order total calculation with shipping costs and tax</p>
+        
+        <div class="test-section">
+            <h2>Test 1: Create Sample Order</h2>
+            <button onclick="testOrderCreation()">Create Test Order</button>
+            <div id="orderResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 2: Fetch Customer Orders</h2>
+            <button onclick="fetchCustomerOrders()">Fetch Orders</button>
+            <div id="ordersResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 3: Generate Invoice</h2>
+            <button onclick="testInvoiceGeneration()">Generate Invoice</button>
+            <div id="invoiceResult"></div>
+        </div>
+
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `test-section ${type === 'error' ? 'error' : 'success'}`;
+            logEntry.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            logs.appendChild(logEntry);
+            console.log(message);
+        }
+
+        async function testOrderCreation() {
+            const resultDiv = document.getElementById('orderResult');
+            
+            try {
+                const token = localStorage.getItem('terraflow_token');
+                if (!token) {
+                    throw new Error('No authentication token found. Please login first.');
+                }
+
+                log('🔄 Testing order creation with new total calculation...');
+                
+                const testOrder = {
+                    items: [{
+                        product_id: 28, // Bubble Wrap
+                        quantity: 2,
+                        unit_price: 899
+                    }],
+                    customer_info: {
+                        fullName: 'John Doe',
+                        email: 'john@test.com',
+                        phone: '+94-77-123-4567'
+                    },
+                    shipping_address: '123 Test Street, Colombo 03',
+                    payment_method: 'cash_on_delivery',
+                    subtotal: 1798, // 899 * 2
+                    shipping_cost: 250,
+                    tax_amount: 89.9, // 5% of 1798
+                    total_amount: 2137.9, // 1798 + 250 + 89.9
+                    notes: 'Test order for total calculation'
+                };
+
+                const response = await fetch('http://localhost:5000/api/customer/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testOrder)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="order-details">
+                            <h3>✅ Order Created Successfully!</h3>
+                            <p><strong>Order Number:</strong> ${result.data.order_number}</p>
+                            <div class="breakdown">
+                                Subtotal: Rs. ${result.data.subtotal.toFixed(2)}<br>
+                                Delivery Fee: Rs. ${result.data.delivery_fee.toFixed(2)}<br>
+                                Tax (5%): Rs. ${result.data.tax_amount.toFixed(2)}<br>
+                                <strong>Total: Rs. ${result.data.total_amount.toFixed(2)}</strong>
+                            </div>
+                        </div>
+                    `;
+                    log('✅ Order creation test passed!', 'success');
+                } else {
+                    throw new Error(result.message || 'Order creation failed');
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Order Creation Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                log(`❌ Order creation test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function fetchCustomerOrders() {
+            const resultDiv = document.getElementById('ordersResult');
+            
+            try {
+                const token = localStorage.getItem('terraflow_token');
+                if (!token) {
+                    throw new Error('No authentication token found. Please login first.');
+                }
+
+                log('🔄 Fetching customer orders to verify total breakdown...');
+                
+                const response = await fetch('http://localhost:5000/api/customer/orders', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    let ordersHtml = '<h3>✅ Orders Retrieved Successfully!</h3>';
+                    
+                    result.data.slice(0, 3).forEach(order => {
+                        const subtotal = order.subtotal || 0;
+                        const shipping = order.shipping_cost || 0;
+                        const tax = order.tax_amount || 0;
+                        const total = order.total_amount || 0;
+                        
+                        ordersHtml += `
+                            <div class="order-details">
+                                <p><strong>Order:</strong> ${order.order_number}</p>
+                                <div class="breakdown">
+                                    Subtotal: Rs. ${subtotal.toFixed(2)}<br>
+                                    Shipping: Rs. ${shipping.toFixed(2)}<br>
+                                    Tax: Rs. ${tax.toFixed(2)}<br>
+                                    <strong>Total: Rs. ${total.toFixed(2)}</strong><br>
+                                    <em>Calculated: Rs. ${(subtotal + shipping + tax).toFixed(2)}</em>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resultDiv.innerHTML = ordersHtml;
+                    log('✅ Orders fetch test passed!', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to fetch orders');
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Orders Fetch Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                log(`❌ Orders fetch test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testInvoiceGeneration() {
+            const resultDiv = document.getElementById('invoiceResult');
+            
+            try {
+                const token = localStorage.getItem('terraflow_token');
+                if (!token) {
+                    throw new Error('No authentication token found. Please login first.');
+                }
+
+                log('🔄 Testing invoice generation...');
+                
+                // First, get the latest order
+                const ordersResponse = await fetch('http://localhost:5000/api/customer/orders', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const ordersResult = await ordersResponse.json();
+                
+                if (!ordersResult.success || ordersResult.data.length === 0) {
+                    throw new Error('No orders found to generate invoice');
+                }
+
+                const latestOrder = ordersResult.data[0];
+                
+                // Generate invoice for the latest order
+                const invoiceResponse = await fetch(`http://localhost:5000/api/invoices/generate/${latestOrder.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const invoiceResult = await invoiceResponse.json();
+                
+                if (invoiceResponse.ok && invoiceResult.success) {
+                    const invoice = invoiceResult.data.invoice;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="order-details">
+                            <h3>✅ Invoice Generated Successfully!</h3>
+                            <p><strong>Invoice Number:</strong> ${invoice.invoice_number}</p>
+                            <div class="breakdown">
+                                Amount: Rs. ${invoice.amount}<br>
+                                Tax: Rs. ${invoice.tax_amount}<br>
+                                <strong>Total: Rs. ${invoice.total_amount}</strong>
+                            </div>
+                        </div>
+                    `;
+                    log('✅ Invoice generation test passed!', 'success');
+                } else {
+                    throw new Error(invoiceResult.message || 'Invoice generation failed');
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Invoice Generation Failed</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                log(`❌ Invoice generation test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            log('🚀 Order Total Calculation Test Page Loaded');
+            log('📝 Updated calculation: Subtotal + Shipping (Rs. 250) + Tax (5%) = Total');
+        });
+    </script>
+</body>
+</html>

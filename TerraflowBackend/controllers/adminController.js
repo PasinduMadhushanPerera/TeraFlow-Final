@@ -378,6 +378,10 @@ const updateProduct = async (req, res) => {
       console.error('Error cleaning up gallery images:', error);
     }
 
+    // Convert string booleans to actual booleans for is_active
+    const isActiveValue = is_active !== undefined ? 
+      (is_active === 'true' || is_active === true) : true;
+
     // Update main product table only (simplified)
     try {
       await pool.execute(`
@@ -395,7 +399,7 @@ const updateProduct = async (req, res) => {
         minimum_stock, 
         unit, 
         sku, 
-        is_active !== undefined ? is_active : true,
+        isActiveValue,
         imageUrl,
         galleryImages.length > 0 ? JSON.stringify(galleryImages) : null,
         productId
@@ -522,6 +526,7 @@ const updateOrderStatus = async (req, res) => {
     // Send notification to customer using our notification trigger
     const statusMessages = {
       confirmed: 'Your order has been confirmed and is being processed',
+      approved: 'Your order has been approved and will proceed to processing',
       processing: 'Your order is currently being processed',
       shipped: 'Your order has been shipped and is on the way',
       delivered: 'Your order has been delivered successfully',

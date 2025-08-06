@@ -406,6 +406,17 @@ const triggerLowStockAlert = async (productId, currentStock, minimumStock) => {
 
 const triggerOrderStatusUpdate = async (orderId, newStatus, customerId) => {
   try {
+    // First check if the customer exists
+    const [customerCheck] = await pool.execute(
+      'SELECT id FROM users WHERE id = ?',
+      [customerId]
+    );
+    
+    if (customerCheck.length === 0) {
+      console.log(`⚠️ Skipping notification - Customer ID ${customerId} not found for order ${orderId}`);
+      return;
+    }
+    
     const title = '📦 Order Status Update';
     const message = `Your order #${orderId} status has been updated to: ${newStatus.toUpperCase()}`;
     
@@ -429,6 +440,17 @@ const triggerOrderStatusUpdate = async (orderId, newStatus, customerId) => {
 
 const triggerPaymentConfirmation = async (orderId, customerId, amount) => {
   try {
+    // First check if the customer exists
+    const [customerCheck] = await pool.execute(
+      'SELECT id FROM users WHERE id = ?',
+      [customerId]
+    );
+    
+    if (customerCheck.length === 0) {
+      console.log(`⚠️ Skipping payment notification - Customer ID ${customerId} not found for order ${orderId}`);
+      return;
+    }
+    
     const title = '✅ Payment Confirmed';
     const message = `Payment of $${amount} for order #${orderId} has been successfully processed.`;
     
@@ -452,6 +474,17 @@ const triggerPaymentConfirmation = async (orderId, customerId, amount) => {
 
 const triggerSupplierDeliveryRequest = async (supplierId, materialRequestId, materialType, quantity, unit) => {
   try {
+    // First check if the supplier exists
+    const [supplierCheck] = await pool.execute(
+      'SELECT id FROM users WHERE id = ? AND role = "supplier"',
+      [supplierId]
+    );
+    
+    if (supplierCheck.length === 0) {
+      console.log(`⚠️ Skipping notification - Supplier ID ${supplierId} not found for material request ${materialRequestId}`);
+      return;
+    }
+    
     const title = '📋 New Material Request';
     const message = `You have received a new material request for ${quantity} ${unit} of ${materialType}. Please review and respond.`;
     

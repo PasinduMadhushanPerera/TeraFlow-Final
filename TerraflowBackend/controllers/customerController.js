@@ -245,7 +245,16 @@ const createOrder = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { items, shipping_address, notes } = req.body;
+    const { 
+      items, 
+      shipping_address, 
+      notes, 
+      customer_info,
+      payment_method,
+      subtotal,
+      shipping_cost = 250, // Default shipping cost
+      total_amount: providedTotal
+    } = req.body;
     const customerId = req.user.id;
 
     if (!items || items.length === 0) {
@@ -256,7 +265,7 @@ const createOrder = async (req, res) => {
     }
 
     // Calculate total amount and validate stock
-    let totalAmount = 0;
+    let calculatedSubtotal = 0;
     const orderItems = [];
 
     for (const item of items) {
@@ -273,27 +282,48 @@ const createOrder = async (req, res) => {
         throw new Error(`Insufficient stock for ${product[0].name}. Available: ${product[0].stock_quantity}`);
       }
 
-      const subtotal = product[0].price * item.quantity;
-      totalAmount += subtotal;
+      const itemSubtotal = product[0].price * item.quantity;
+      calculatedSubtotal += itemSubtotal;
 
       orderItems.push({
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: product[0].price,
-        subtotal
+        subtotal: itemSubtotal
       });
     }
+
+    // Calculate delivery fee and total
+    const deliveryFee = parseFloat(shipping_cost) || 250;
+    const taxRate = 0.05; // 5% tax
+    const taxAmount = calculatedSubtotal * taxRate;
+    const finalTotalAmount = calculatedSubtotal + deliveryFee + taxAmount;
 
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${customerId}`;
 
-    // Create order
+    // Create order with proper amounts
     const [orderResult] = await connection.execute(`
       INSERT INTO orders (
-        customer_id, order_number, status, total_amount, 
-        shipping_address, payment_status, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [customerId, orderNumber, 'pending', totalAmount, shipping_address, 'pending', notes]);
+        customer_id, customer_name, customer_email, customer_phone,
+        order_number, status, total_amount, delivery_fee, tax_amount,
+        shipping_address, payment_status, payment_method, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      customerId, 
+      customer_info?.fullName || null,
+      customer_info?.email || null, 
+      customer_info?.phone || null,
+      orderNumber, 
+      'pending', 
+      finalTotalAmount, 
+      deliveryFee,
+      taxAmount,
+      shipping_address, 
+      'pending', 
+      payment_method || 'cash_on_delivery',
+      notes
+    ]);
 
     const orderId = orderResult.insertId;
 
@@ -329,7 +359,10 @@ const createOrder = async (req, res) => {
       data: {
         id: orderId,
         order_number: orderNumber,
-        total_amount: totalAmount
+        subtotal: calculatedSubtotal,
+        delivery_fee: deliveryFee,
+        tax_amount: taxAmount,
+        total_amount: finalTotalAmount
       }
     });
 
@@ -354,8 +387,12 @@ const getOrders = async (req, res) => {
     let query = `
       SELECT 
         o.id, o.order_number, o.status, o.total_amount, 
-        o.shipping_address, o.payment_status, o.notes, 
-        o.created_at, o.updated_at
+        o.delivery_fee, o.tax_amount,
+        o.payment_method, o.payment_status,
+        o.shipping_address, o.notes as special_instructions, 
+        o.customer_name, o.customer_email, o.customer_phone,
+        o.created_at, o.updated_at,
+        (o.total_amount - COALESCE(o.delivery_fee, 0) - COALESCE(o.tax_amount, 0)) as subtotal
       FROM orders o
       WHERE o.customer_id = ?
     `;
@@ -370,17 +407,47 @@ const getOrders = async (req, res) => {
 
     const [orders] = await pool.execute(query, params);
 
-    // Get order items for each order
+    // Get order items for each order and calculate totals
     for (const order of orders) {
       const [items] = await pool.execute(`
         SELECT 
-          oi.*, p.name as product_name, p.unit
+          oi.*, p.name as product_name, p.unit, p.sku as product_sku
         FROM order_items oi
         JOIN products p ON oi.product_id = p.id
         WHERE oi.order_id = ?
       `, [order.id]);
       
       order.items = items;
+      
+      // Calculate proper breakdown
+      const itemsSubtotal = items.reduce((sum, item) => sum + parseFloat(item.subtotal || 0), 0);
+      order.subtotal = itemsSubtotal;
+      order.shipping_cost = parseFloat(order.delivery_fee || 0);
+      order.tax_amount = parseFloat(order.tax_amount || 0);
+      
+      // Ensure total_amount includes all components
+      const calculatedTotal = order.subtotal + order.shipping_cost + order.tax_amount;
+      if (Math.abs(calculatedTotal - parseFloat(order.total_amount)) > 0.01) {
+        // If there's a discrepancy, log it and use the database total
+        console.log(`Total amount discrepancy for order ${order.id}: calculated ${calculatedTotal}, stored ${order.total_amount}`);
+      }
+      
+      // Create customer_info object from available fields
+      order.customer_info = {
+        fullName: order.customer_name || 'N/A',
+        email: order.customer_email || 'N/A', 
+        phone: order.customer_phone || 'N/A'
+      };
+      
+      // Remove individual customer fields to avoid duplication
+      delete order.customer_name;
+      delete order.customer_email;
+      delete order.customer_phone;
+      
+      // Create payment_details object
+      order.payment_details = {
+        method: order.payment_method || 'N/A'
+      };
     }
 
     res.json({
